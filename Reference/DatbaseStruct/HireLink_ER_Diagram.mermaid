@@ -1,0 +1,327 @@
+erDiagram
+    %% HireLink Database ER Diagram
+    %% Local Service Provider Platform
+
+    users {
+        bigint user_id PK
+        varchar name
+        varchar email UK
+        varchar phone UK
+        varchar password_hash
+        varchar profile_image_url
+        date date_of_birth
+        enum gender
+        enum user_type
+        enum account_status
+        boolean is_email_verified
+        boolean is_phone_verified
+        enum preferred_language
+        json notification_preferences
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_sessions {
+        bigint session_id PK
+        bigint user_id FK
+        varchar access_token_hash
+        varchar refresh_token_hash
+        enum device_type
+        varchar ip_address
+        timestamp access_token_expires_at
+        timestamp refresh_token_expires_at
+        boolean is_active
+        timestamp created_at
+    }
+
+    user_addresses {
+        bigint address_id PK
+        bigint user_id FK
+        enum address_type
+        varchar address_line1
+        varchar city
+        varchar state
+        varchar pincode
+        decimal latitude
+        decimal longitude
+        boolean is_default
+    }
+
+    otp_verifications {
+        bigint otp_id PK
+        varchar identifier
+        enum identifier_type
+        varchar otp_hash
+        enum purpose
+        int attempts
+        timestamp expires_at
+        boolean is_verified
+    }
+
+    service_providers {
+        bigint provider_id PK
+        bigint user_id FK_UK
+        varchar business_name
+        text business_description
+        int experience_years
+        json specializations
+        decimal base_latitude
+        decimal base_longitude
+        varchar base_pincode
+        int service_radius_km
+        varchar aadhaar_encrypted
+        varchar pan_encrypted
+        enum kyc_status
+        decimal average_rating
+        int total_bookings
+        int completed_bookings
+        decimal completion_rate
+        decimal total_earnings
+        boolean is_available
+        enum availability_status
+    }
+
+    provider_documents {
+        bigint document_id PK
+        bigint provider_id FK
+        enum document_type
+        varchar document_url
+        enum verification_status
+        bigint verified_by FK
+        timestamp verified_at
+    }
+
+    provider_availability {
+        bigint availability_id PK
+        bigint provider_id FK
+        enum day_of_week
+        time start_time
+        time end_time
+        time break_start
+        time break_end
+        boolean is_available
+    }
+
+    provider_service_areas {
+        bigint area_id PK
+        bigint provider_id FK
+        varchar pincode
+        varchar city
+        decimal additional_travel_charge
+        boolean is_primary_area
+    }
+
+    service_categories {
+        bigint category_id PK
+        varchar category_name UK
+        varchar category_slug UK
+        text category_description
+        varchar category_icon
+        bigint parent_category_id FK
+        int category_level
+        int display_order
+        decimal min_base_price
+        decimal max_base_price
+        enum price_unit
+        boolean is_active
+        boolean is_featured
+    }
+
+    services {
+        bigint service_id PK
+        bigint provider_id FK
+        bigint category_id FK
+        varchar service_name
+        text service_description
+        decimal base_price
+        enum price_type
+        int estimated_duration_minutes
+        int advance_booking_hours
+        boolean materials_included
+        boolean is_active
+        int times_booked
+        decimal average_rating
+    }
+
+    bookings {
+        bigint booking_id PK
+        varchar booking_number UK
+        bigint user_id FK
+        bigint provider_id FK
+        bigint service_id FK
+        date scheduled_date
+        time scheduled_time
+        text service_address
+        varchar service_pincode
+        decimal service_latitude
+        decimal service_longitude
+        varchar issue_title
+        text issue_description
+        enum urgency_level
+        decimal estimated_amount
+        decimal material_cost
+        decimal labor_cost
+        decimal final_amount
+        enum booking_status
+        enum cancelled_by
+        text work_summary
+        decimal user_rating
+        timestamp created_at
+    }
+
+    booking_status_history {
+        bigint history_id PK
+        bigint booking_id FK
+        enum previous_status
+        enum new_status
+        bigint changed_by_user_id FK
+        enum changed_by_role
+        text change_reason
+        timestamp changed_at
+    }
+
+    payments {
+        bigint payment_id PK
+        varchar payment_number UK
+        bigint booking_id FK
+        bigint payer_user_id FK
+        bigint payee_provider_id FK
+        decimal gross_amount
+        decimal platform_fee
+        decimal tax_amount
+        decimal net_amount
+        varchar currency
+        enum payment_method
+        enum payment_gateway
+        varchar gateway_payment_id
+        enum payment_status
+        enum payout_status
+        decimal payout_amount
+        timestamp completed_at
+    }
+
+    payment_transactions {
+        bigint transaction_id PK
+        bigint payment_id FK
+        enum transaction_type
+        varchar transaction_reference
+        decimal amount
+        enum transaction_status
+        json gateway_response
+        timestamp created_at
+    }
+
+    reviews {
+        bigint review_id PK
+        bigint booking_id FK_UK
+        bigint reviewer_id FK
+        bigint reviewee_provider_id FK
+        decimal overall_rating
+        decimal quality_rating
+        decimal punctuality_rating
+        decimal professionalism_rating
+        varchar review_title
+        text review_text
+        json review_images
+        text provider_response
+        enum moderation_status
+        boolean is_visible
+        int helpful_count
+    }
+
+    conversations {
+        bigint conversation_id PK
+        bigint booking_id FK
+        bigint user_id FK
+        bigint provider_id FK
+        text last_message_text
+        timestamp last_message_at
+        enum last_message_by
+        int user_unread_count
+        int provider_unread_count
+        boolean is_active
+    }
+
+    messages {
+        bigint message_id PK
+        bigint conversation_id FK
+        bigint sender_id FK
+        enum sender_type
+        enum message_type
+        text message_text
+        varchar attachment_url
+        boolean is_read
+        timestamp read_at
+        timestamp sent_at
+    }
+
+    notifications {
+        bigint notification_id PK
+        bigint user_id FK
+        enum notification_type
+        varchar title
+        text message
+        enum reference_type
+        bigint reference_id
+        varchar action_url
+        boolean is_read
+        timestamp created_at
+    }
+
+    system_settings {
+        bigint setting_id PK
+        varchar setting_key UK
+        text setting_value
+        enum setting_type
+        varchar category
+        boolean is_public
+    }
+
+    admin_audit_logs {
+        bigint log_id PK
+        bigint admin_user_id FK
+        varchar action_type
+        text action_description
+        varchar target_type
+        bigint target_id
+        json old_values
+        json new_values
+        varchar ip_address
+        timestamp performed_at
+    }
+
+    %% Relationships
+    users ||--o{ user_sessions : "has"
+    users ||--o{ user_addresses : "has"
+    users ||--o| service_providers : "is"
+    users ||--o{ bookings : "makes"
+    users ||--o{ reviews : "writes"
+    users ||--o{ notifications : "receives"
+    users ||--o{ conversations : "participates"
+    users ||--o{ messages : "sends"
+    users ||--o{ admin_audit_logs : "performs"
+
+    service_providers ||--o{ provider_documents : "uploads"
+    service_providers ||--o{ provider_availability : "sets"
+    service_providers ||--o{ provider_service_areas : "covers"
+    service_providers ||--o{ services : "offers"
+    service_providers ||--o{ bookings : "receives"
+    service_providers ||--o{ reviews : "receives"
+    service_providers ||--o{ payments : "receives"
+    service_providers ||--o{ conversations : "participates"
+
+    service_categories ||--o{ services : "contains"
+    service_categories ||--o{ service_categories : "has_subcategory"
+
+    services ||--o{ bookings : "booked_for"
+
+    bookings ||--o{ booking_status_history : "has"
+    bookings ||--o| payments : "paid_via"
+    bookings ||--o| reviews : "reviewed_in"
+    bookings ||--o| conversations : "discussed_in"
+
+    payments ||--o{ payment_transactions : "has"
+
+    conversations ||--o{ messages : "contains"
+
+    provider_documents }o--|| users : "verified_by"

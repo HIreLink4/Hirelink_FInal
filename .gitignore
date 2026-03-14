@@ -1,0 +1,140 @@
+# ========================
+# Dependencies
+# ========================
+node_modules/
+.pnp
+.pnp.js
+
+# ========================
+# Maven / Java Build
+# ========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+# Maven wrapper
+.mvn/
+mvnw
+mvnw.cmd
+
+# ========================
+# Frontend Build Outputs
+# ========================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# ========================
+# Environment & Secrets ⚠️
+# ========================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Sensitive files — DO NOT COMMIT
+rzp-key.csv
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.yml
+secrets.yaml
+
+# ========================
+# IDE & Editor
+# ========================
+.idea/
+*.iml
+*.iws
+*.ipr
+.eclipse/
+.classpath
+.project
+.settings/
+.factorypath
+.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+nbproject/
+.nb-gradle/
+
+# ========================
+# Logs
+# ========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+spring.log
+
+# ========================
+# OS Generated
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ========================
+# Docker / Volumes
+# ========================
+mysql_data/
+postgres_data/
+mongo_data/
+redis_data/
+
+# ========================
+# Uploads & User Content
+# ========================
+uploads/
+backend/uploads/
+
+# ========================
+# Cache & Temp Files
+# ========================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.cache
+*.tmp
+*.temp
+.turbo/
+
+# ========================
+# Testing
+# ========================
+coverage/
+.nyc_output/
+test-results/
+*.lcov
+
+# ========================
+# Package manager locks
+# (keep package-lock.json but ignore others if not used)
+# ========================
+yarn.lock
+pnpm-lock.yaml
+# Uncomment below if you don't want to commit package-lock.json
+# package-lock.json
