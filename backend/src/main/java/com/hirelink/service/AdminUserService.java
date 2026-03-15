@@ -32,18 +32,21 @@ public class AdminUserService {
     private final AdminAuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
+    @Transactional(readOnly = true)
     public List<UserListItem> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::toListItem)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<UserListItem> getUsersByType(String userType) {
         return userRepository.findByUserType(User.UserType.valueOf(userType)).stream()
                 .map(this::toListItem)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<UserListItem> searchUsers(String keyword) {
         return userRepository.searchUsers(keyword).stream()
                 .map(this::toListItem)

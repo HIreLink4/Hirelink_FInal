@@ -67,15 +67,32 @@ export default function CategoryServices() {
                 <div className="p-6">
                   {/* Provider info */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {service.provider?.providerName?.charAt(0) || 'P'}
-                    </div>
+                    {service.provider?.profileImageUrl ? (
+                      <img 
+                        src={service.provider.profileImageUrl.startsWith('http') 
+                          ? service.provider.profileImageUrl 
+                          : `${import.meta.env.VITE_API_URL || '/api'}${service.provider.profileImageUrl}`}
+                        alt={service.provider?.businessName || service.provider?.providerName}
+                        className="w-12 h-12 rounded-full object-cover shadow-sm border border-gray-100"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
+                        {service.provider?.providerName?.charAt(0) || 'P'}
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium text-gray-900">{service.provider?.businessName || service.provider?.providerName}</p>
-                      <div className="flex items-center gap-1 text-sm">
-                        <StarIconSolid className="h-4 w-4 text-amber-400" />
-                        <span className="font-medium">{service.provider?.averageRating?.toFixed(1) || '5.0'}</span>
-                        <span className="text-gray-400">({service.provider?.totalReviews || 0})</span>
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <StarIconSolid className="h-4 w-4 text-amber-400" />
+                          <span className="font-medium">{service.provider?.averageRating?.toFixed(1) || '5.0'}</span>
+                          <span className="text-gray-400">({service.provider?.totalReviews || 0})</span>
+                        </div>
+                        {service.provider?.experienceYears > 0 && (
+                          <span className="text-gray-400 text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                            {service.provider.experienceYears} Yrs Exp
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

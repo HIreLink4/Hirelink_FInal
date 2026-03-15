@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useForm } from 'react-hook-form'
-import { userAPI } from '../services/api'
+import { userAPI, providersAPI } from '../services/api'
 import { useAuthStore } from '../context/authStore'
 import toast from 'react-hot-toast'
 import { 
@@ -228,6 +228,57 @@ export default function Profile() {
   const isVerified = user?.isPhoneVerified || user?.isEmailVerified
   const hasPassword = user?.hasPassword
   const isGoogleUser = user?.authProvider === 'GOOGLE'
+  const isProvider = user?.roles?.includes('PROVIDER') || user?.userType === 'PROVIDER'
+
+  const [editProviderMode, setEditProviderMode] = useState(false)
+
+  const { data: providerData, isLoading: providerLoading, isError: providerError } = useQuery(
+    'providerProfile',
+    () => providersAPI.getMyProfile(),
+    {
+      enabled: !!isProvider,
+      staleTime: 0,
+      refetchOnMount: true,
+      retry: 1,
+    }
+  )
+  const providerProfile = providerData?.data?.data
+
+  const updateProviderMutation = useMutation(
+    (data) => providersAPI.updateMyProfile({
+      businessName: data.businessName,
+      businessDescription: data.businessDescription,
+      tagline: data.tagline,
+      experienceYears: parseInt(data.experienceYears, 10) || 0
+    }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('providerProfile')
+        toast.success('Provider details updated successfully')
+        setEditProviderMode(false)
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to update provider details')
+      }
+    }
+  )
+
+  const { register: registerProvider, handleSubmit: handleProviderSubmit, reset: resetProvider, formState: { errors: providerErrors } } = useForm()
+
+  useEffect(() => {
+    if (providerProfile && !editProviderMode) {
+      resetProvider({
+        businessName: providerProfile.businessName || '',
+        businessDescription: providerProfile.businessDescription || '',
+        tagline: providerProfile.tagline || '',
+        experienceYears: providerProfile.experienceYears || 0
+      })
+    }
+  }, [providerProfile, editProviderMode, resetProvider])
+
+  const onProviderSubmit = (data) => {
+    updateProviderMutation.mutate(data)
+  }
 
   return (
     <div className="animate-fadeIn">
@@ -380,6 +431,128 @@ export default function Profile() {
             </div>
           )}
         </div>
+
+        {/* Provider Info */}
+        {isProvider && (
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Business Details</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Shown publicly on your provider profile</p>
+              </div>
+              {!editProviderMode && !providerLoading && !providerError && (
+                <button
+                  onClick={() => setEditProviderMode(true)}
+                  className="btn-ghost text-sm"
+                >
+                  <PencilIcon className="h-4 w-4 mr-1" />
+                  Edit
+                </button>
+              )}
+            </div>
+
+            {providerLoading ? (
+              <div className="flex items-center gap-2 text-gray-500 py-4">
+                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Loading your business details...</span>
+              </div>
+            ) : providerError ? (
+              <div className="text-sm text-red-500 py-4">
+                Could not load business details. Please refresh the page or restart the backend server.
+              </div>
+            ) : editProviderMode ? (
+              <form onSubmit={handleProviderSubmit(onProviderSubmit)} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Business Name</label>
+                  <input
+                    {...registerProvider('businessName', { required: 'Business Name is required' })}
+                    className={`input ${providerErrors.businessName ? 'input-error' : ''}`}
+                    placeholder="Enter business name"
+                  />
+                  {providerErrors.businessName && <p className="text-red-500 text-sm mt-1">{providerErrors.businessName.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Business Description</label>
+                  <textarea
+                    {...registerProvider('businessDescription')}
+                    className="input min-h-[100px]"
+                    placeholder="Describe your business and services"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Tagline</label>
+                  <input
+                    {...registerProvider('tagline')}
+                    className="input"
+                    placeholder="A catchy tagline for your business"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Experience (Years)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    {...registerProvider('experienceYears')}
+                    className="input"
+                    placeholder="Years of experience"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button type="submit" disabled={updateProviderMutation.isLoading} className="btn-primary">
+                    {updateProviderMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setEditProviderMode(false); resetProvider(); }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {/* show at-a-glance if all fields are empty */}
+                {!providerProfile?.businessName && !providerProfile?.tagline && !providerProfile?.businessDescription && !providerProfile?.experienceYears ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <WrenchScrewdriverIcon className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">No business details set yet.</p>
+                    <button onClick={() => setEditProviderMode(true)} className="btn-primary mt-4 text-sm">
+                      Add Business Details
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Business Name</p>
+                      <p className="font-semibold text-gray-900">{providerProfile?.businessName || <span className="text-gray-400 font-normal">Not provided</span>}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tagline</p>
+                      <p className="font-semibold text-gray-900 italic">{providerProfile?.tagline || <span className="text-gray-400 font-normal not-italic">Not provided</span>}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Experience</p>
+                      <p className="font-semibold text-gray-900">
+                        {providerProfile?.experienceYears ? `${providerProfile.experienceYears} Years` : <span className="text-gray-400 font-normal">Not provided</span>}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-xl md:col-span-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Business Description</p>
+                      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                        {providerProfile?.businessDescription || <span className="text-gray-400">Not provided</span>}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Email Verification Banner */}
         {user?.email && !user?.isEmailVerified && !isGoogleUser && (

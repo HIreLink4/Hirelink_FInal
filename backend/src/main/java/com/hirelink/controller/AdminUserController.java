@@ -20,8 +20,8 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserListItem>>> getAllUsers(
-            @RequestParam(required = false) String role,
-            @RequestParam(required = false) String search) {
+            @RequestParam(name = "role", required = false) String role,
+            @RequestParam(name = "search", required = false) String search) {
 
         List<UserListItem> users;
         if (search != null && !search.isBlank()) {
@@ -35,13 +35,13 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserDetail>> getUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<UserDetail>> getUser(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(adminUserService.getUserDetail(id)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserDetail>> updateUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody UpdateUserRequest request,
             @AuthenticationPrincipal CustomUserDetails adminUser) {
         return ResponseEntity.ok(ApiResponse.success("User updated",
@@ -50,7 +50,7 @@ public class AdminUserController {
 
     @PostMapping("/{id}/ban")
     public ResponseEntity<ApiResponse<String>> banUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody BanUserRequest request,
             @AuthenticationPrincipal CustomUserDetails adminUser) {
         adminUserService.banUser(id, request, adminUser.getUserId());
@@ -59,7 +59,7 @@ public class AdminUserController {
 
     @PostMapping("/{id}/unban")
     public ResponseEntity<ApiResponse<String>> unbanUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails adminUser) {
         adminUserService.unbanUser(id, adminUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success("User unbanned"));
@@ -67,7 +67,7 @@ public class AdminUserController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails adminUser) {
         adminUserService.deleteUser(id, adminUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success("User deleted"));
@@ -75,7 +75,7 @@ public class AdminUserController {
 
     @PostMapping("/{id}/restore")
     public ResponseEntity<ApiResponse<String>> restoreUser(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @AuthenticationPrincipal CustomUserDetails adminUser) {
         adminUserService.restoreUser(id, adminUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success("User restored"));

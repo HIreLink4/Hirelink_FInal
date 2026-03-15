@@ -144,13 +144,26 @@ export default function ServiceDetail() {
             <div className="card p-6 lg:p-8">
               <h2 className="font-semibold text-gray-900 text-lg mb-4">About the Provider</h2>
               <Link to={`/providers/${provider?.providerId}`} className="flex items-center gap-4 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                  {provider?.providerName?.charAt(0) || 'P'}
-                </div>
+                {provider?.profileImageUrl ? (
+                  <img 
+                    src={provider.profileImageUrl.startsWith('http') 
+                      ? provider.profileImageUrl 
+                      : `${import.meta.env.VITE_API_URL || '/api'}${provider.profileImageUrl}`}
+                    alt={provider?.businessName || provider?.providerName}
+                    className="w-16 h-16 rounded-full object-cover shadow-sm border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm">
+                    {provider?.providerName?.charAt(0) || 'P'}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                     {provider?.businessName || provider?.providerName}
                   </h3>
+                  {provider?.tagline && (
+                    <p className="text-sm text-gray-500 italic mb-1">{provider.tagline}</p>
+                  )}
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <StarIconSolid className="h-4 w-4 text-amber-400" />
@@ -158,11 +171,23 @@ export default function ServiceDetail() {
                     </div>
                     <span>•</span>
                     <span>{provider?.completedBookings || 0} jobs completed</span>
+                    {provider?.experienceYears > 0 && (
+                      <>
+                        <span>•</span>
+                        <span>{provider.experienceYears} Years Exp</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </Link>
               
-              <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+              {provider?.businessDescription && (
+                <div className="mt-4 text-sm text-gray-600 border-t pt-4">
+                  <p className="line-clamp-3">{provider.businessDescription}</p>
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center gap-2 text-sm text-gray-500 border-t pt-4">
                 <ShieldCheckIcon className="h-5 w-5 text-green-500" />
                 <span>Verified Professional</span>
               </div>

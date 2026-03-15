@@ -11,6 +11,7 @@ import com.hirelink.exception.ResourceNotFoundException;
 import com.hirelink.repository.ReviewRepository;
 import com.hirelink.repository.ServiceProviderRepository;
 import com.hirelink.repository.ServiceRepository;
+import com.hirelink.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +31,7 @@ public class ProviderService {
     private final ServiceProviderRepository providerRepository;
     private final ServiceRepository serviceRepository;
     private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final ServiceService serviceService;
     private final LocationService locationService;
@@ -41,10 +43,33 @@ public class ProviderService {
         return mapToProviderResponse(provider, true);
     }
 
+    @Transactional(readOnly = true)
     public ProviderDTO.ProviderResponse getProviderByUserId(Long userId) {
-        ServiceProvider provider = providerRepository.findByUserUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found for user: " + userId));
-        return mapToProviderResponse(provider, true);
+        return providerRepository.findByUserUserId(userId)
+                .map(provider -> mapToProviderResponse(provider, true))
+                .orElseGet(() -> {
+                    // Return a basic response from User record if ServiceProvider record is missing
+                    com.hirelink.entity.User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+                    
+                    return ProviderDTO.ProviderResponse.builder()
+                            .userId(user.getUserId())
+                            .providerName(user.getName())
+                            .email(user.getEmail())
+                            .phone(user.getPhone())
+                            .profileImageUrl(user.getProfileImageUrl())
+                            .kycStatus("NOT_SUBMITTED")
+                            .availabilityStatus("OFFLINE")
+                            .isAvailable(false)
+                            .experienceYears(0)
+                            .completedBookings(0)
+                            .totalBookings(0)
+                            .averageRating(BigDecimal.ZERO)
+                            .totalReviews(0)
+                            .services(Collections.emptyList())
+                            .recentReviews(Collections.emptyList())
+                            .build();
+                });
     }
 
     public ProviderDTO.ProviderListResponse getProvidersByCategory(Long categoryId, int page, int size) {
@@ -114,9 +139,22 @@ public class ProviderService {
     }
 
     @Transactional
-    public ProviderDTO.ProviderResponse updateProvider(Long providerId, ProviderDTO.UpdateProviderRequest request) {
-        ServiceProvider provider = providerRepository.findById(providerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found: " + providerId));
+    public ProviderDTO.ProviderResponse updateProvider(Long userId, ProviderDTO.UpdateProviderRequest request) {
+        ServiceProvider provider = providerRepository.findByUserUserId(userId)
+                .orElseGet(() -> {
+                    // Create basic provider record if it doesn't exist but user is trying to update it
+                    com.hirelink.entity.User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+                    
+                    return ServiceProvider.builder()
+                            .user(user)
+                            .businessName(user.getName() + "'s Business")
+                            .kycStatus(ServiceProvider.KycStatus.NOT_SUBMITTED)
+                            .availabilityStatus(ServiceProvider.AvailabilityStatus.OFFLINE)
+                            .isAvailable(true)
+                            .experienceYears(0)
+                            .build();
+                });
 
         if (request.getBusinessName() != null) {
             provider.setBusinessName(request.getBusinessName());
@@ -337,14 +375,14 @@ public class ProviderService {
                 .baseLatitude(provider.getBaseLatitude())
                 .baseLongitude(provider.getBaseLongitude())
                 .serviceRadiusKm(provider.getServiceRadiusKm())
-                .kycStatus(provider.getKycStatus().name())
+                .kycStatus(provider.getKycStatus() != null ? provider.getKycStatus().name() : "PENDING")
                 .averageRating(provider.getAverageRating())
                 .totalReviews(provider.getTotalReviews())
                 .totalBookings(provider.getTotalBookings())
                 .completedBookings(provider.getCompletedBookings())
                 .completionRate(provider.getCompletionRate())
                 .isAvailable(provider.getIsAvailable())
-                .availabilityStatus(provider.getAvailabilityStatus().name())
+                .availabilityStatus(provider.getAvailabilityStatus() != null ? provider.getAvailabilityStatus().name() : "OFFLINE")
                 .isFeatured(provider.getIsFeatured())
                 .services(services)
                 .recentReviews(reviewSummaries)

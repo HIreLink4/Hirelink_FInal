@@ -50,7 +50,13 @@ public class SecurityConfig {
                     "/api/public/**",
                     "/api/categories/**",
                     "/api/services/**",
-                    "/api/providers/**",
+                    "/api/providers",
+                    "/api/providers/featured",
+                    "/api/providers/top-rated",
+                    "/api/providers/nearby",
+                    "/api/providers/nearby/location",
+                    "/api/providers/category/**",
+                    "/api/providers/*/services",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",
@@ -62,6 +68,7 @@ public class SecurityConfig {
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Provider dashboard endpoints (users with PROVIDER role)
+                .requestMatchers("/api/providers/me/**").hasAnyRole("PROVIDER", "ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/api/provider/**").hasAnyRole("PROVIDER", "ADMIN", "SUPER_ADMIN")
                 // All other requests require authentication
                 .anyRequest().authenticated()

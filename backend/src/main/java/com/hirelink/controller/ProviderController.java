@@ -37,7 +37,7 @@ public class ProviderController {
     @GetMapping("/{id}")
     @Operation(summary = "Get provider by ID")
     public ResponseEntity<ApiResponse<ProviderDTO.ProviderResponse>> getProviderById(
-            @PathVariable Long id) {
+            @PathVariable("id") Long id) {
         ProviderDTO.ProviderResponse response = providerService.getProviderById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -45,9 +45,9 @@ public class ProviderController {
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "Get providers by category")
     public ResponseEntity<ApiResponse<ProviderDTO.ProviderListResponse>> getProvidersByCategory(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable("categoryId") Long categoryId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ProviderDTO.ProviderListResponse response = providerService.getProvidersByCategory(categoryId, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -62,7 +62,7 @@ public class ProviderController {
     @GetMapping("/nearby")
     @Operation(summary = "Get nearby providers by pincode")
     public ResponseEntity<ApiResponse<List<ProviderDTO.ProviderSummary>>> getNearbyProviders(
-            @RequestParam String pincode) {
+            @RequestParam("pincode") String pincode) {
         List<ProviderDTO.ProviderSummary> providers = providerService.getNearbyProviders(pincode);
         return ResponseEntity.ok(ApiResponse.success(providers));
     }
@@ -70,10 +70,10 @@ public class ProviderController {
     @GetMapping("/nearby/location")
     @Operation(summary = "Get nearby providers by coordinates")
     public ResponseEntity<ApiResponse<List<ProviderDTO.ProviderSummary>>> getNearbyProvidersByLocation(
-            @RequestParam BigDecimal lat,
-            @RequestParam BigDecimal lng,
-            @RequestParam(defaultValue = "10") Integer radiusKm,
-            @RequestParam(required = false) Long categoryId) {
+            @RequestParam("lat") BigDecimal lat,
+            @RequestParam("lng") BigDecimal lng,
+            @RequestParam(name = "radiusKm", defaultValue = "10") Integer radiusKm,
+            @RequestParam(name = "categoryId", required = false) Long categoryId) {
         List<ProviderDTO.ProviderSummary> providers = providerService.getNearbyProvidersByLocation(
                 lat, lng, radiusKm, categoryId);
         return ResponseEntity.ok(ApiResponse.success(providers));
@@ -82,8 +82,8 @@ public class ProviderController {
     @GetMapping("/top-rated")
     @Operation(summary = "Get top rated providers")
     public ResponseEntity<ApiResponse<ProviderDTO.ProviderListResponse>> getTopRatedProviders(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ProviderDTO.ProviderListResponse response = providerService.getTopRatedProviders(page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -91,9 +91,9 @@ public class ProviderController {
     @GetMapping("/{id}/services")
     @Operation(summary = "Get services offered by provider")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getProviderServices(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable("id") Long id,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.getProviderServices(id, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -112,9 +112,7 @@ public class ProviderController {
     public ResponseEntity<ApiResponse<ProviderDTO.ProviderResponse>> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ProviderDTO.UpdateProviderRequest request) {
-        ServiceProvider provider = providerRepository.findByUserUserId(userDetails.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
-        ProviderDTO.ProviderResponse response = providerService.updateProvider(provider.getProviderId(), request);
+        ProviderDTO.ProviderResponse response = providerService.updateProvider(userDetails.getUserId(), request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated", response));
     }
 
@@ -122,8 +120,8 @@ public class ProviderController {
     @Operation(summary = "Update availability status")
     public ResponseEntity<ApiResponse<Void>> updateAvailability(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam boolean available,
-            @RequestParam(required = false) String status) {
+            @RequestParam("available") boolean available,
+            @RequestParam(name = "status", required = false) String status) {
         ServiceProvider provider = providerRepository.findByUserUserId(userDetails.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
         providerService.updateAvailability(provider.getProviderId(), available, status);
@@ -134,9 +132,9 @@ public class ProviderController {
     @Operation(summary = "Get provider's bookings")
     public ResponseEntity<ApiResponse<BookingDTO.BookingListResponse>> getMyBookings(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceProvider provider = providerRepository.findByUserUserId(userDetails.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
         BookingDTO.BookingListResponse response = bookingService.getProviderBookings(

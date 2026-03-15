@@ -52,6 +52,9 @@ public class ServiceDTO {
         private Integer completedBookings;
         private Boolean isAvailable;
         private String availabilityStatus;
+        private Integer experienceYears;
+        private String businessDescription;
+        private String tagline;
     }
 
     @Data

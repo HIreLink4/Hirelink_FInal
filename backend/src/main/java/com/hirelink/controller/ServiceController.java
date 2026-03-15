@@ -22,9 +22,9 @@ public class ServiceController {
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "Get services by category ID")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getServicesByCategory(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable("categoryId") Long categoryId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.getServicesByCategory(categoryId, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -32,9 +32,9 @@ public class ServiceController {
     @GetMapping("/category/slug/{slug}")
     @Operation(summary = "Get services by category slug")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getServicesByCategorySlug(
-            @PathVariable String slug,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable("slug") String slug,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.getServicesByCategorySlug(slug, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -42,9 +42,9 @@ public class ServiceController {
     @GetMapping("/provider/{providerId}")
     @Operation(summary = "Get services by provider ID")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getProviderServices(
-            @PathVariable Long providerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable("providerId") Long providerId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.getProviderServices(providerId, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -52,7 +52,7 @@ public class ServiceController {
     @GetMapping("/{id}")
     @Operation(summary = "Get service by ID")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceResponse>> getServiceById(
-            @PathVariable Long id) {
+            @PathVariable("id") Long id) {
         ServiceDTO.ServiceResponse response = serviceService.getServiceById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -60,9 +60,9 @@ public class ServiceController {
     @GetMapping("/search")
     @Operation(summary = "Search services")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> searchServices(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam("query") String query,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.searchServices(query, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -70,8 +70,8 @@ public class ServiceController {
     @GetMapping("/popular")
     @Operation(summary = "Get popular services")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getPopularServices(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         ServiceDTO.ServiceListResponse response = serviceService.getPopularServices(page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

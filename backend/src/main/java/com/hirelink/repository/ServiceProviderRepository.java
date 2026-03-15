@@ -30,7 +30,11 @@ public interface ServiceProviderRepository extends JpaRepository<ServiceProvider
     @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.basePincode = :pincode AND sp.isAvailable = true")
     List<ServiceProvider> findByPincodeAndAvailable(@Param("pincode") String pincode);
     
-    @Query("SELECT DISTINCT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.isAvailable = true AND EXISTS (SELECT s FROM Service s WHERE s.provider = sp AND s.category.categoryId = :categoryId AND s.isActive = true)")
+    @Query("SELECT DISTINCT sp FROM ServiceProvider sp " +
+           "LEFT JOIN FETCH sp.user " +
+           "WHERE sp.isAvailable = true " +
+           "AND sp.kycStatus = 'VERIFIED' " +
+           "AND sp.primaryCategory.categoryId = :categoryId")
     Page<ServiceProvider> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
     
     @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.user.accountStatus = 'ACTIVE' AND sp.isAvailable = true ORDER BY sp.averageRating DESC, sp.completedBookings DESC")

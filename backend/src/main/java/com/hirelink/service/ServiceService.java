@@ -171,6 +171,9 @@ public class ServiceService {
                     .completedBookings(provider.getCompletedBookings())
                     .isAvailable(provider.getIsAvailable())
                     .availabilityStatus(provider.getAvailabilityStatus() != null ? provider.getAvailabilityStatus().name() : "OFFLINE")
+                    .experienceYears(provider.getExperienceYears())
+                    .businessDescription(provider.getBusinessDescription())
+                    .tagline(provider.getTagline())
                     .build();
         }
 

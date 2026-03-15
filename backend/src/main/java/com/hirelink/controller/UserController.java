@@ -72,7 +72,8 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> sendEmailOtp(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         authService.sendProfileEmailOtp(userDetails.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("OTP sent to your email", "Check your email for the verification code"));
+        return ResponseEntity
+                .ok(ApiResponse.success("OTP sent to your email", "Check your email for the verification code"));
     }
 
     @PostMapping("/me/verify-email-otp")
@@ -85,7 +86,6 @@ public class UserController {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return ResponseEntity.ok(ApiResponse.success("Email verified successfully", buildUserDTO(user)));
     }
-
 
     @PutMapping("/me")
     @Operation(summary = "Update current user profile")
@@ -124,7 +124,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<AuthDTO.UserDTO>> uploadProfilePicture(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam("file") MultipartFile file) {
-        
+
         User user = userRepository.findById(userDetails.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 

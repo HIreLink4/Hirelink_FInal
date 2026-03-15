@@ -107,6 +107,8 @@ export const providersAPI = {
   getFeatured: () => api.get('/providers/featured'),
   getTopRated: (params) => api.get('/providers/top-rated', { params }),
   getByCategory: (categoryId, params) => api.get(`/providers/category/${categoryId}`, { params }),
+  getMyProfile: () => api.get('/providers/me'),
+  updateMyProfile: (data) => api.put('/providers/me', data),
 }
 
 // Bookings API
