@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useForm } from 'react-hook-form'
-import { userAPI, providersAPI } from '../services/api'
+import { userAPI, providersAPI, categoriesAPI } from '../services/api'
 import { useAuthStore } from '../context/authStore'
 import toast from 'react-hot-toast'
 import { 
@@ -266,7 +266,6 @@ export default function Profile() {
   )
 
   const [editingService, setEditingService] = useState(null)
-  const [servicePrice, setServicePrice] = useState('')
 
   const updateServiceMutation = useMutation(
     ({ serviceId, data }) => providersAPI.updateService(serviceId, data),
@@ -275,7 +274,7 @@ export default function Profile() {
         queryClient.invalidateQueries('providerProfile')
         toast.success('Service updated successfully')
         setEditingService(null)
-        setServicePrice('')
+        resetEditService()
       },
       onError: (error) => {
         toast.error(error.response?.data?.message || 'Failed to update service')
@@ -283,20 +282,25 @@ export default function Profile() {
     }
   )
 
-  const handleEditService = (service) => {
+  const { register: registerEditService, handleSubmit: handleEditServiceSubmit, reset: resetEditService, formState: { errors: editServiceErrors } } = useForm()
+
+  const handleEditClick = (service) => {
     setEditingService(service)
-    setServicePrice(service.basePrice.toString())
+    resetEditService({
+      serviceName: service.serviceName,
+      basePrice: service.basePrice,
+      serviceDescription: service.serviceDescription,
+      isActive: service.isActive
+    })
   }
 
-  const onUpdateServicePrice = (e) => {
-    e.preventDefault()
-    if (!servicePrice || isNaN(servicePrice)) {
-      toast.error('Please enter a valid amount')
-      return
-    }
+  const onUpdateService = (data) => {
     updateServiceMutation.mutate({
       serviceId: editingService.serviceId,
-      data: { basePrice: parseFloat(servicePrice) }
+      data: {
+        ...data,
+        basePrice: parseFloat(data.basePrice)
+      }
     })
   }
 
@@ -313,6 +317,42 @@ export default function Profile() {
       })
     }
   }, [providerProfile, editProviderMode, resetProvider])
+
+  const [showAddServiceForm, setShowAddServiceForm] = useState(false)
+  const { data: categoriesData } = useQuery(
+    'providerCategories', 
+    () => categoriesAPI.getAll({ hideEmpty: false }),
+    {
+      staleTime: 0,
+      refetchOnMount: true
+    }
+  )
+  const categories = categoriesData?.data?.data || []
+
+  const addServiceMutation = useMutation(
+    (data) => providersAPI.addService(data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('providerProfile')
+        toast.success('Service added successfully')
+        setShowAddServiceForm(false)
+        resetAddService()
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to add service')
+      }
+    }
+  )
+
+  const { register: registerAddService, handleSubmit: handleAddServiceSubmit, reset: resetAddService, formState: { errors: addServiceErrors } } = useForm()
+
+  const onAddService = (data) => {
+    addServiceMutation.mutate({
+      ...data,
+      basePrice: parseFloat(data.basePrice),
+      categoryId: parseInt(data.categoryId, 10)
+    })
+  }
 
   const onProviderSubmit = (data) => {
     updateProviderMutation.mutate(data)
@@ -617,7 +657,96 @@ export default function Profile() {
                 <h2 className="text-lg font-semibold text-gray-900">My Services</h2>
                 <p className="text-sm text-gray-500 mt-0.5">Manage your service offerings and pricing</p>
               </div>
+              {!showAddServiceForm && (
+                <button 
+                  onClick={() => setShowAddServiceForm(true)}
+                  className="btn-primary flex items-center gap-1.5 py-2"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add Service
+                </button>
+              )}
             </div>
+
+            {showAddServiceForm && (
+              <form onSubmit={handleAddServiceSubmit(onAddService)} className="mb-8 p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 animate-fadeIn">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold text-gray-900">Add New Service</h3>
+                  <button 
+                    type="button" 
+                    onClick={() => { setShowAddServiceForm(false); resetAddService(); }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm text-gray-600 mb-1">Service Name *</label>
+                    <input
+                      {...registerAddService('serviceName', { required: 'Service name is required' })}
+                      className={`input ${addServiceErrors.serviceName ? 'input-error' : ''}`}
+                      placeholder="e.g. Deep Home Cleaning"
+                    />
+                    {addServiceErrors.serviceName && <p className="text-red-500 text-xs mt-1">{addServiceErrors.serviceName.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Category *</label>
+                    <select
+                      {...registerAddService('categoryId', { required: 'Category is required' })}
+                      className={`input ${addServiceErrors.categoryId ? 'input-error' : ''}`}
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.categoryId} value={cat.categoryId}>
+                          {cat.categoryName}
+                        </option>
+                      ))}
+                    </select>
+                    {addServiceErrors.categoryId && <p className="text-red-500 text-xs mt-1">{addServiceErrors.categoryId.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Base Price (₹) *</label>
+                    <input
+                      type="number"
+                      {...registerAddService('basePrice', { required: 'Price is required', min: 0 })}
+                      className={`input ${addServiceErrors.basePrice ? 'input-error' : ''}`}
+                      placeholder="0.00"
+                    />
+                    {addServiceErrors.basePrice && <p className="text-red-500 text-xs mt-1">{addServiceErrors.basePrice.message}</p>}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm text-gray-600 mb-1">Description</label>
+                    <textarea
+                      {...registerAddService('serviceDescription')}
+                      className="input min-h-[80px]"
+                      placeholder="Provide details about what's included in this service"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    type="submit" 
+                    disabled={addServiceMutation.isLoading}
+                    className="btn-primary"
+                  >
+                    {addServiceMutation.isLoading ? 'Adding...' : 'Add Service'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setShowAddServiceForm(false); resetAddService(); }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
 
             {providerLoading ? (
               <div className="flex items-center gap-2 text-gray-500 py-4">
@@ -627,56 +756,104 @@ export default function Profile() {
             ) : providerProfile?.services?.length > 0 ? (
               <div className="space-y-4">
                 {providerProfile.services.map((service) => (
-                  <div key={service.serviceId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl hover:border-primary-100 transition-colors">
-                    <div className="flex-1 mb-3 sm:mb-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{service.serviceName}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${service.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                          {service.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-2">{service.category?.categoryName}</p>
-                      
-                      <div className="flex items-center text-primary-600 font-bold">
-                        <CurrencyRupeeIcon className="h-4 w-4 mr-1" />
-                        {editingService?.serviceId === service.serviceId ? (
-                          <form onSubmit={onUpdateServicePrice} className="flex items-center gap-2">
+                  <div key={service.serviceId}>
+                    {editingService?.serviceId === service.serviceId ? (
+                      <form onSubmit={handleEditServiceSubmit(onUpdateService)} className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4 animate-fadeIn">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="font-semibold text-primary-900">Edit Service</h3>
+                          <button 
+                            type="button" 
+                            onClick={() => setEditingService(null)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <label className="block text-sm text-gray-600 mb-1">Service Name *</label>
+                            <input
+                              {...registerEditService('serviceName', { required: 'Service name is required' })}
+                              className={`input ${editServiceErrors.serviceName ? 'input-error' : ''}`}
+                            />
+                            {editServiceErrors.serviceName && <p className="text-red-500 text-xs mt-1">{editServiceErrors.serviceName.message}</p>}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm text-gray-600 mb-1">Base Price (₹) *</label>
                             <input
                               type="number"
-                              value={servicePrice}
-                              onChange={(e) => setServicePrice(e.target.value)}
-                              className="w-24 px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-primary-500 focus:outline-none"
-                              autoFocus
+                              {...registerEditService('basePrice', { required: 'Price is required', min: 0 })}
+                              className={`input ${editServiceErrors.basePrice ? 'input-error' : ''}`}
                             />
-                            <button 
-                              type="submit" 
-                              disabled={updateServiceMutation.isLoading}
-                              className="text-xs bg-primary-600 text-white px-2 py-1 rounded hover:bg-primary-700 disabled:opacity-50"
-                            >
-                              {updateServiceMutation.isLoading ? '...' : 'Save'}
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => setEditingService(null)}
-                              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
-                            >
-                              Cancel
-                            </button>
-                          </form>
-                        ) : (
-                          <div className="flex items-center group">
-                            <span>{service.basePrice}</span>
-                            <button 
-                              onClick={() => handleEditService(service)}
-                              className="ml-2 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-primary-600 transition-all"
-                              title="Edit price"
-                            >
-                              <PencilIcon className="h-3.5 w-3.5" />
-                            </button>
+                            {editServiceErrors.basePrice && <p className="text-red-500 text-xs mt-1">{editServiceErrors.basePrice.message}</p>}
                           </div>
-                        )}
+
+                          <div>
+                            <label className="block text-sm text-gray-600 mb-1">Status</label>
+                            <select
+                              {...registerEditService('isActive')}
+                              className="input"
+                            >
+                              <option value={true}>Active</option>
+                              <option value={false}>Inactive</option>
+                            </select>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-sm text-gray-600 mb-1">Description</label>
+                            <textarea
+                              {...registerEditService('serviceDescription')}
+                              className="input min-h-[80px]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                          <button 
+                            type="submit" 
+                            disabled={updateServiceMutation.isLoading}
+                            className="btn-primary"
+                          >
+                            {updateServiceMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => setEditingService(null)}
+                            className="btn-secondary"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl hover:border-primary-100 transition-colors group">
+                        <div className="flex-1 mb-3 sm:mb-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-gray-900">{service.serviceName}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${service.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {service.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">{service.category?.categoryName}</p>
+                          
+                          <div className="flex items-center text-primary-600 font-bold">
+                            <CurrencyRupeeIcon className="h-4 w-4 mr-1" />
+                            <span>{service.basePrice}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleEditClick(service)}
+                            className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                            title="Edit service"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
