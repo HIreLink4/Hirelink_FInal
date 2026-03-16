@@ -75,7 +75,7 @@ export default function Home() {
   const [heroSearchQuery, setHeroSearchQuery] = useState('')
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
-  const { data: categoriesData } = useQuery('categories', categoriesAPI.getAll)
+  const { data: categoriesData } = useQuery('categories', () => categoriesAPI.getAll({ hideEmpty: true }))
   const { data: featuredProviders } = useQuery('featuredProviders', providersAPI.getFeatured)
   const { data: recentBookingsData } = useQuery(
     'recentBookings', 

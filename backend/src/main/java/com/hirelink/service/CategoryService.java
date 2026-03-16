@@ -20,24 +20,27 @@ public class CategoryService {
     private final ServiceCategoryRepository categoryRepository;
     private final ServiceRepository serviceRepository;
 
-    public List<CategoryDTO.CategoryResponse> getAllCategories() {
+    public List<CategoryDTO.CategoryResponse> getAllCategories(boolean hideEmpty) {
         List<ServiceCategory> categories = categoryRepository.findAllActiveSorted();
         return categories.stream()
                 .map(this::mapToCategoryResponse)
+                .filter(c -> !hideEmpty || c.getServiceCount() > 0)
                 .collect(Collectors.toList());
     }
 
-    public List<CategoryDTO.CategoryResponse> getRootCategories() {
+    public List<CategoryDTO.CategoryResponse> getRootCategories(boolean hideEmpty) {
         List<ServiceCategory> categories = categoryRepository.findRootCategories();
         return categories.stream()
-                .map(this::mapToCategoryResponseWithSubcategories)
+                .map(cat -> mapToCategoryResponseWithSubcategories(cat, hideEmpty))
+                .filter(c -> !hideEmpty || isCategoryBranchNonEmpty(c))
                 .collect(Collectors.toList());
     }
 
-    public List<CategoryDTO.CategoryResponse> getFeaturedCategories() {
+    public List<CategoryDTO.CategoryResponse> getFeaturedCategories(boolean hideEmpty) {
         List<ServiceCategory> categories = categoryRepository.findByIsFeaturedTrueAndIsActiveTrue();
         return categories.stream()
                 .map(this::mapToCategoryResponse)
+                .filter(c -> !hideEmpty || c.getServiceCount() > 0)
                 .collect(Collectors.toList());
     }
 
@@ -55,10 +58,11 @@ public class CategoryService {
         return mapToCategoryResponseWithSubcategories(category);
     }
 
-    public List<CategoryDTO.CategoryResponse> getSubcategories(Long parentId) {
+    public List<CategoryDTO.CategoryResponse> getSubcategories(Long parentId, boolean hideEmpty) {
         List<ServiceCategory> categories = categoryRepository.findByParentCategoryCategoryIdAndIsActiveTrue(parentId);
         return categories.stream()
                 .map(this::mapToCategoryResponse)
+                .filter(c -> !hideEmpty || c.getServiceCount() > 0)
                 .collect(Collectors.toList());
     }
 
@@ -83,7 +87,7 @@ public class CategoryService {
                 .build();
     }
 
-    private CategoryDTO.CategoryResponse mapToCategoryResponseWithSubcategories(ServiceCategory category) {
+    private CategoryDTO.CategoryResponse mapToCategoryResponseWithSubcategories(ServiceCategory category, boolean hideEmpty) {
         CategoryDTO.CategoryResponse response = mapToCategoryResponse(category);
         
         try {
@@ -91,6 +95,7 @@ public class CategoryService {
                 List<CategoryDTO.CategoryResponse> subCategories = category.getSubCategories().stream()
                         .filter(sub -> sub.getIsActive() != null && sub.getIsActive())
                         .map(this::mapToCategoryResponse)
+                        .filter(sub -> !hideEmpty || sub.getServiceCount() > 0)
                         .collect(Collectors.toList());
                 response.setSubCategories(subCategories);
             }
@@ -100,5 +105,20 @@ public class CategoryService {
         }
         
         return response;
+    }
+
+    private boolean isCategoryBranchNonEmpty(CategoryDTO.CategoryResponse response) {
+        if (response.getServiceCount() > 0) return true;
+        if (response.getSubCategories() != null) {
+            return response.getSubCategories().stream().anyMatch(sub -> sub.getServiceCount() > 0);
+        }
+        return false;
+    }
+
+    /**
+     * Helper for backward compatibility or cases where we always want to see subcats (like getting by ID/slug)
+     */
+    private CategoryDTO.CategoryResponse mapToCategoryResponseWithSubcategories(ServiceCategory category) {
+        return mapToCategoryResponseWithSubcategories(category, false);
     }
 }

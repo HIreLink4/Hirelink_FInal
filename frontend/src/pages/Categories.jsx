@@ -36,7 +36,7 @@ const categoryColors = {
 }
 
 export default function Categories() {
-  const { data, isLoading } = useQuery('allCategories', categoriesAPI.getAll)
+  const { data, isLoading } = useQuery('allCategories', () => categoriesAPI.getAll({ hideEmpty: true }))
   const categories = data?.data?.data || []
 
   if (isLoading) {

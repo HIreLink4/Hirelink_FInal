@@ -108,4 +108,26 @@ public class ServiceDTO {
         @NotNull(message = "Category ID is required")
         private Long categoryId;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateServiceRequest {
+        private String serviceName;
+        private String serviceDescription;
+        private List<String> serviceHighlights;
+        
+        @DecimalMin(value = "0.0", message = "Price must be positive")
+        private BigDecimal basePrice;
+        
+        private String priceType;
+        private BigDecimal minPrice;
+        private BigDecimal maxPrice;
+        private Integer estimatedDurationMinutes;
+        private Integer advanceBookingHours;
+        private Boolean materialsIncluded;
+        private String materialsDescription;
+        private Boolean isActive;
+    }
 }

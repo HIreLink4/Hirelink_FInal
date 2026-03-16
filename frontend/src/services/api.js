@@ -79,10 +79,10 @@ export const authAPI = {
 
 // Categories API
 export const categoriesAPI = {
-  getAll: () => api.get('/categories'),
+  getAll: (params) => api.get('/categories', { params }),
   getBySlug: (slug) => api.get(`/categories/${slug}`),
-  getFeatured: () => api.get('/categories/featured'),
-  getRoot: () => api.get('/categories/root'),
+  getFeatured: (params) => api.get('/categories/featured', { params }),
+  getRoot: (params) => api.get('/categories/root', { params }),
 }
 
 // Services API
@@ -109,6 +109,7 @@ export const providersAPI = {
   getByCategory: (categoryId, params) => api.get(`/providers/category/${categoryId}`, { params }),
   getMyProfile: () => api.get('/providers/me'),
   updateMyProfile: (data) => api.put('/providers/me', data),
+  updateService: (serviceId, data) => api.put(`/providers/me/services/${serviceId}`, data),
   searchByLocation: (query) => api.get('/providers/nearby/search', { params: { query } }),
 }
 

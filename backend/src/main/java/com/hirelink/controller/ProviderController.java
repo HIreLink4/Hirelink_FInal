@@ -159,4 +159,15 @@ public class ProviderController {
         ServiceDTO.ServiceResponse response = serviceService.createService(provider.getProviderId(), request);
         return ResponseEntity.ok(ApiResponse.success("Service added", response));
     }
+    @PutMapping("/me/services/{serviceId}")
+    @Operation(summary = "Update an existing service")
+    public ResponseEntity<ApiResponse<ServiceDTO.ServiceResponse>> updateService(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long serviceId,
+            @Valid @RequestBody ServiceDTO.UpdateServiceRequest request) {
+        ServiceProvider provider = providerRepository.findByUserUserId(userDetails.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+        ServiceDTO.ServiceResponse response = serviceService.updateService(serviceId, provider.getProviderId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Service updated", response));
+    }
 }

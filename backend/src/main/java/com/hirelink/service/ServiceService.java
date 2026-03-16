@@ -125,6 +125,39 @@ public class ServiceService {
         return mapToServiceResponse(service);
     }
 
+    @Transactional
+    public ServiceDTO.ServiceResponse updateService(Long serviceId, Long providerId, ServiceDTO.UpdateServiceRequest request) {
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found: " + serviceId));
+
+        if (!service.getProvider().getProviderId().equals(providerId)) {
+            throw new RuntimeException("Unauthorized to update this service");
+        }
+
+        if (request.getServiceName() != null) service.setServiceName(request.getServiceName());
+        if (request.getServiceDescription() != null) service.setServiceDescription(request.getServiceDescription());
+        if (request.getBasePrice() != null) service.setBasePrice(request.getBasePrice());
+        if (request.getPriceType() != null) service.setPriceType(Service.PriceType.valueOf(request.getPriceType()));
+        if (request.getMinPrice() != null) service.setMinPrice(request.getMinPrice());
+        if (request.getMaxPrice() != null) service.setMaxPrice(request.getMaxPrice());
+        if (request.getEstimatedDurationMinutes() != null) service.setEstimatedDurationMinutes(request.getEstimatedDurationMinutes());
+        if (request.getAdvanceBookingHours() != null) service.setAdvanceBookingHours(request.getAdvanceBookingHours());
+        if (request.getMaterialsIncluded() != null) service.setMaterialsIncluded(request.getMaterialsIncluded());
+        if (request.getMaterialsDescription() != null) service.setMaterialsDescription(request.getMaterialsDescription());
+        if (request.getIsActive() != null) service.setIsActive(request.getIsActive());
+
+        if (request.getServiceHighlights() != null) {
+            try {
+                service.setServiceHighlights(objectMapper.writeValueAsString(request.getServiceHighlights()));
+            } catch (JsonProcessingException e) {
+                // ignore
+            }
+        }
+
+        service = serviceRepository.save(service);
+        return mapToServiceResponse(service);
+    }
+
     private ServiceDTO.ServiceListResponse mapToServiceListResponse(Page<Service> servicePage) {
         List<ServiceDTO.ServiceResponse> services = servicePage.getContent().stream()
                 .map(this::mapToServiceResponse)

@@ -23,7 +23,8 @@ import {
   ArrowPathIcon,
   LinkIcon,
   ClockIcon,
-  CameraIcon
+  CameraIcon,
+  CurrencyRupeeIcon
 } from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import LocationPicker from '../components/LocationPicker'
@@ -249,7 +250,8 @@ export default function Profile() {
       businessName: data.businessName,
       businessDescription: data.businessDescription,
       tagline: data.tagline,
-      experienceYears: parseInt(data.experienceYears, 10) || 0
+      experienceYears: parseInt(data.experienceYears, 10) || 0,
+      serviceRadiusKm: parseInt(data.serviceRadiusKm, 10) || 10
     }),
     {
       onSuccess: () => {
@@ -263,6 +265,41 @@ export default function Profile() {
     }
   )
 
+  const [editingService, setEditingService] = useState(null)
+  const [servicePrice, setServicePrice] = useState('')
+
+  const updateServiceMutation = useMutation(
+    ({ serviceId, data }) => providersAPI.updateService(serviceId, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('providerProfile')
+        toast.success('Service updated successfully')
+        setEditingService(null)
+        setServicePrice('')
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to update service')
+      }
+    }
+  )
+
+  const handleEditService = (service) => {
+    setEditingService(service)
+    setServicePrice(service.basePrice.toString())
+  }
+
+  const onUpdateServicePrice = (e) => {
+    e.preventDefault()
+    if (!servicePrice || isNaN(servicePrice)) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+    updateServiceMutation.mutate({
+      serviceId: editingService.serviceId,
+      data: { basePrice: parseFloat(servicePrice) }
+    })
+  }
+
   const { register: registerProvider, handleSubmit: handleProviderSubmit, reset: resetProvider, formState: { errors: providerErrors } } = useForm()
 
   useEffect(() => {
@@ -271,7 +308,8 @@ export default function Profile() {
         businessName: providerProfile.businessName || '',
         businessDescription: providerProfile.businessDescription || '',
         tagline: providerProfile.tagline || '',
-        experienceYears: providerProfile.experienceYears || 0
+        experienceYears: providerProfile.experienceYears || 0,
+        serviceRadiusKm: providerProfile.serviceRadiusKm || 10
       })
     }
   }, [providerProfile, editProviderMode, resetProvider])
@@ -501,6 +539,17 @@ export default function Profile() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">Service Radius (KM)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    {...registerProvider('serviceRadiusKm')}
+                    className="input"
+                    placeholder="Service radius in km"
+                  />
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button type="submit" disabled={updateProviderMutation.isLoading} className="btn-primary">
                     {updateProviderMutation.isLoading ? 'Saving...' : 'Save Changes'}
@@ -541,6 +590,12 @@ export default function Profile() {
                         {providerProfile?.experienceYears ? `${providerProfile.experienceYears} Years` : <span className="text-gray-400 font-normal">Not provided</span>}
                       </p>
                     </div>
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Service Radius</p>
+                      <p className="font-semibold text-gray-900">
+                        {providerProfile?.serviceRadiusKm ? `${providerProfile.serviceRadiusKm} KM` : <span className="text-gray-400 font-normal">10 KM (Default)</span>}
+                      </p>
+                    </div>
                     <div className="p-4 bg-gray-50 rounded-xl md:col-span-2">
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Business Description</p>
                       <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
@@ -553,6 +608,86 @@ export default function Profile() {
             )}
           </div>
         )}
+
+        {/* My Services Section */}
+        {isProvider && (
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">My Services</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Manage your service offerings and pricing</p>
+              </div>
+            </div>
+
+            {providerLoading ? (
+              <div className="flex items-center gap-2 text-gray-500 py-4">
+                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Loading services...</span>
+              </div>
+            ) : providerProfile?.services?.length > 0 ? (
+              <div className="space-y-4">
+                {providerProfile.services.map((service) => (
+                  <div key={service.serviceId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl hover:border-primary-100 transition-colors">
+                    <div className="flex-1 mb-3 sm:mb-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900">{service.serviceName}</h3>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${service.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {service.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 mb-2">{service.category?.categoryName}</p>
+                      
+                      <div className="flex items-center text-primary-600 font-bold">
+                        <CurrencyRupeeIcon className="h-4 w-4 mr-1" />
+                        {editingService?.serviceId === service.serviceId ? (
+                          <form onSubmit={onUpdateServicePrice} className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={servicePrice}
+                              onChange={(e) => setServicePrice(e.target.value)}
+                              className="w-24 px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-primary-500 focus:outline-none"
+                              autoFocus
+                            />
+                            <button 
+                              type="submit" 
+                              disabled={updateServiceMutation.isLoading}
+                              className="text-xs bg-primary-600 text-white px-2 py-1 rounded hover:bg-primary-700 disabled:opacity-50"
+                            >
+                              {updateServiceMutation.isLoading ? '...' : 'Save'}
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setEditingService(null)}
+                              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                            >
+                              Cancel
+                            </button>
+                          </form>
+                        ) : (
+                          <div className="flex items-center group">
+                            <span>{service.basePrice}</span>
+                            <button 
+                              onClick={() => handleEditService(service)}
+                              className="ml-2 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-primary-600 transition-all"
+                              title="Edit price"
+                            >
+                              <PencilIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">You haven't listed any services yet.</p>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Email Verification Banner */}
         {user?.email && !user?.isEmailVerified && !isGoogleUser && (

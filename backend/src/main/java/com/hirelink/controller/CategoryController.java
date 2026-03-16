@@ -21,22 +21,25 @@ public class CategoryController {
 
     @GetMapping
     @Operation(summary = "Get all active categories")
-    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getAllCategories() {
-        List<CategoryDTO.CategoryResponse> categories = categoryService.getAllCategories();
+    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getAllCategories(
+            @RequestParam(required = false, defaultValue = "false") boolean hideEmpty) {
+        List<CategoryDTO.CategoryResponse> categories = categoryService.getAllCategories(hideEmpty);
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 
     @GetMapping("/root")
     @Operation(summary = "Get root categories with subcategories")
-    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getRootCategories() {
-        List<CategoryDTO.CategoryResponse> categories = categoryService.getRootCategories();
+    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getRootCategories(
+            @RequestParam(required = false, defaultValue = "false") boolean hideEmpty) {
+        List<CategoryDTO.CategoryResponse> categories = categoryService.getRootCategories(hideEmpty);
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 
     @GetMapping("/featured")
     @Operation(summary = "Get featured categories")
-    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getFeaturedCategories() {
-        List<CategoryDTO.CategoryResponse> categories = categoryService.getFeaturedCategories();
+    public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getFeaturedCategories(
+            @RequestParam(required = false, defaultValue = "false") boolean hideEmpty) {
+        List<CategoryDTO.CategoryResponse> categories = categoryService.getFeaturedCategories(hideEmpty);
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 
@@ -59,8 +62,9 @@ public class CategoryController {
     @GetMapping("/{id}/subcategories")
     @Operation(summary = "Get subcategories of a category")
     public ResponseEntity<ApiResponse<List<CategoryDTO.CategoryResponse>>> getSubcategories(
-            @PathVariable Long id) {
-        List<CategoryDTO.CategoryResponse> categories = categoryService.getSubcategories(id);
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") boolean hideEmpty) {
+        List<CategoryDTO.CategoryResponse> categories = categoryService.getSubcategories(id, hideEmpty);
         return ResponseEntity.ok(ApiResponse.success(categories));
     }
 }
