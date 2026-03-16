@@ -146,6 +146,28 @@ public class ProviderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public ProviderDTO.ProviderListResponse searchProviders(String query, int page, int size) {
+        String enhancedQuery = query.trim().toLowerCase();
+        
+        // Manual stemming/synonym mapping for common terms
+        if (enhancedQuery.contains("electrician")) {
+            enhancedQuery = enhancedQuery.replace("electrician", "electric");
+        } else if (enhancedQuery.contains("plumber")) {
+            enhancedQuery = enhancedQuery.replace("plumber", "plumb");
+        } else if (enhancedQuery.contains("carpenter")) {
+            enhancedQuery = enhancedQuery.replace("carpenter", "carpent");
+        } else if (enhancedQuery.contains("mechanic")) {
+            enhancedQuery = enhancedQuery.replace("mechanic", "mechan");
+        } else if (enhancedQuery.contains("cleaner")) {
+            enhancedQuery = enhancedQuery.replace("cleaner", "clean");
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ServiceProvider> providerPage = providerRepository.searchProviders(enhancedQuery, pageable);
+        return mapToProviderListResponse(providerPage);
+    }
+
     @Transactional
     public ProviderDTO.ProviderResponse updateProvider(Long userId, ProviderDTO.UpdateProviderRequest request) {
         ServiceProvider provider = providerRepository.findByUserUserId(userId)

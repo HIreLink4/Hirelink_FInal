@@ -38,9 +38,16 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public ServiceDTO.ServiceListResponse getServicesByCategorySlug(String slug, int page, int size) {
+    public ServiceDTO.ServiceListResponse getServicesByCategorySlug(String slug, String location, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Service> servicePage = serviceRepository.findByCategoryCategorySlugAndIsActiveTrue(slug, pageable);
+        Page<Service> servicePage;
+        
+        if (location != null && !location.trim().isEmpty()) {
+            servicePage = serviceRepository.searchByCategoryAndLocation(slug, location, pageable);
+        } else {
+            servicePage = serviceRepository.findByCategoryCategorySlugAndIsActiveTrue(slug, pageable);
+        }
+        
         return mapToServiceListResponse(servicePage);
     }
 
@@ -60,8 +67,27 @@ public class ServiceService {
 
     @Transactional(readOnly = true)
     public ServiceDTO.ServiceListResponse searchServices(String query, int page, int size) {
+        String enhancedQuery = query.trim().toLowerCase();
+        
+        // Manual stemming/synonym mapping for common terms
+        if (enhancedQuery.contains("electrician")) {
+            enhancedQuery = enhancedQuery.replace("electrician", "electric");
+        }
+        if (enhancedQuery.contains("plumber")) {
+            enhancedQuery = enhancedQuery.replace("plumber", "plumb");
+        }
+        if (enhancedQuery.contains("carpenter")) {
+            enhancedQuery = enhancedQuery.replace("carpenter", "carpent");
+        }
+        if (enhancedQuery.contains("mechanic")) {
+            enhancedQuery = enhancedQuery.replace("mechanic", "mechan");
+        }
+        if (enhancedQuery.contains("cleaner")) {
+            enhancedQuery = enhancedQuery.replace("cleaner", "clean");
+        }
+
         Pageable pageable = PageRequest.of(page, size);
-        Page<Service> servicePage = serviceRepository.searchServices(query, pageable);
+        Page<Service> servicePage = serviceRepository.searchServices(enhancedQuery, pageable);
         
         return mapToServiceListResponse(servicePage);
     }

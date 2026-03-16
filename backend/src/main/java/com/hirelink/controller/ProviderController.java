@@ -95,6 +95,16 @@ public class ProviderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "Search providers")
+    public ResponseEntity<ApiResponse<ProviderDTO.ProviderListResponse>> searchProviders(
+            @RequestParam("query") String query,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        ProviderDTO.ProviderListResponse response = providerService.searchProviders(query, page, size);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/{id}/services")
     @Operation(summary = "Get services offered by provider")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getProviderServices(

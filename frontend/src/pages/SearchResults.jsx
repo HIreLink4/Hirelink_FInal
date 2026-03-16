@@ -33,27 +33,15 @@ export default function SearchResults() {
     { enabled: !!query }
   )
 
-  // Fetch top-rated providers (we'll filter by query on client side for now)
+  // Fetch providers from backend
   const { data: providersData, isLoading: providersLoading } = useQuery(
     ['searchProviders', query],
-    () => providersAPI.getTopRated({ page: 0, size: 20 }),
+    () => providersAPI.search(query, { page: 0, size: 20 }),
     { enabled: !!query }
   )
-
-  const services = servicesData?.data?.data?.services || []
-  // Handle both array and object with providers property
-  const allProviders = Array.isArray(providersData?.data?.data) 
-    ? providersData.data.data 
-    : (providersData?.data?.data?.providers || [])
   
-  // Filter providers by query (client-side)
-  const providers = query && Array.isArray(allProviders)
-    ? allProviders.filter(p => 
-        p.businessName?.toLowerCase().includes(query.toLowerCase()) ||
-        p.providerName?.toLowerCase().includes(query.toLowerCase()) ||
-        p.serviceCategories?.some(cat => cat.toLowerCase().includes(query.toLowerCase()))
-      )
-    : (Array.isArray(allProviders) ? allProviders : [])
+  const services = servicesData?.data?.data?.services || []
+  const providers = providersData?.data?.data?.providers || []
 
   const handleSearch = (newQuery) => {
     setSearchParams({ q: newQuery })

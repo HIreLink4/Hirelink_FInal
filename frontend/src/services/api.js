@@ -112,6 +112,7 @@ export const providersAPI = {
   addService: (data) => api.post('/providers/me/services', data),
   updateService: (serviceId, data) => api.put(`/providers/me/services/${serviceId}`, data),
   searchByLocation: (query) => api.get('/providers/nearby/search', { params: { query } }),
+  search: (query, params) => api.get('/providers/search', { params: { query, ...params } }),
 }
 
 // Bookings API

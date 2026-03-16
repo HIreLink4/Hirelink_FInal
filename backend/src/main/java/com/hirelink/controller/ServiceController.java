@@ -30,12 +30,13 @@ public class ServiceController {
     }
 
     @GetMapping("/category/slug/{slug}")
-    @Operation(summary = "Get services by category slug")
+    @Operation(summary = "Get services by category slug with location filtering")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> getServicesByCategorySlug(
             @PathVariable("slug") String slug,
+            @RequestParam(name = "location", required = false) String location,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        ServiceDTO.ServiceListResponse response = serviceService.getServicesByCategorySlug(slug, page, size);
+        ServiceDTO.ServiceListResponse response = serviceService.getServicesByCategorySlug(slug, location, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

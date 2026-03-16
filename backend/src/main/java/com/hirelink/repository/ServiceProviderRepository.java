@@ -42,8 +42,20 @@ public interface ServiceProviderRepository extends JpaRepository<ServiceProvider
            "AND sp.primaryCategory.categoryId = :categoryId")
     Page<ServiceProvider> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
     
-    @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.user.accountStatus = 'ACTIVE' AND sp.isAvailable = true ORDER BY sp.averageRating DESC, sp.completedBookings DESC")
+    @Query("SELECT DISTINCT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.user.accountStatus = 'ACTIVE' AND sp.isAvailable = true ORDER BY sp.averageRating DESC, sp.completedBookings DESC")
     Page<ServiceProvider> findActiveProviders(Pageable pageable);
+
+    @Query("SELECT DISTINCT sp FROM ServiceProvider sp " +
+           "LEFT JOIN FETCH sp.user u " +
+           "LEFT JOIN sp.services s " +
+           "LEFT JOIN s.category c " +
+           "WHERE (LOWER(sp.businessName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.tagline) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.specializations) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "AND sp.isAvailable = true")
+    Page<ServiceProvider> searchProviders(@Param("query") String query, Pageable pageable);
     
     @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user LEFT JOIN FETCH sp.services WHERE sp.providerId = :id")
     Optional<ServiceProvider> findByIdWithDetails(@Param("id") Long id);
