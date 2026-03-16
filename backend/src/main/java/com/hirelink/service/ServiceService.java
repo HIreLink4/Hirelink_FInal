@@ -66,7 +66,7 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public ServiceDTO.ServiceListResponse searchServices(String query, int page, int size) {
+    public ServiceDTO.ServiceListResponse searchServices(String query, String location, int page, int size) {
         String enhancedQuery = query.trim().toLowerCase();
         
         // Manual stemming/synonym mapping for common terms
@@ -87,7 +87,13 @@ public class ServiceService {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Service> servicePage = serviceRepository.searchServices(enhancedQuery, pageable);
+        Page<Service> servicePage;
+        
+        if (location != null && !location.trim().isEmpty()) {
+            servicePage = serviceRepository.searchServicesWithLocation(enhancedQuery, location, pageable);
+        } else {
+            servicePage = serviceRepository.searchServices(enhancedQuery, pageable);
+        }
         
         return mapToServiceListResponse(servicePage);
     }

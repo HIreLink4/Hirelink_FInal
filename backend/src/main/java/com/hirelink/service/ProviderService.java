@@ -147,7 +147,7 @@ public class ProviderService {
     }
 
     @Transactional(readOnly = true)
-    public ProviderDTO.ProviderListResponse searchProviders(String query, int page, int size) {
+    public ProviderDTO.ProviderListResponse searchProviders(String query, String location, int page, int size) {
         String enhancedQuery = query.trim().toLowerCase();
         
         // Manual stemming/synonym mapping for common terms
@@ -164,7 +164,14 @@ public class ProviderService {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<ServiceProvider> providerPage = providerRepository.searchProviders(enhancedQuery, pageable);
+        Page<ServiceProvider> providerPage;
+        
+        if (location != null && !location.trim().isEmpty()) {
+            providerPage = providerRepository.searchProvidersWithLocation(enhancedQuery, location, pageable);
+        } else {
+            providerPage = providerRepository.searchProviders(enhancedQuery, pageable);
+        }
+        
         return mapToProviderListResponse(providerPage);
     }
 

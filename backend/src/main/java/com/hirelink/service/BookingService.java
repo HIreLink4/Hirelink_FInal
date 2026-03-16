@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.RoundingMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -102,6 +103,25 @@ public class BookingService {
         // Update service stats
         service.setTimesBooked(service.getTimesBooked() + 1);
         serviceRepository.save(service);
+
+        // Send notification email to provider
+        try {
+            if (provider.getUser() != null && provider.getUser().getEmail() != null) {
+                emailService.sendNewBookingNotificationToProvider(
+                        provider.getUser().getEmail(),
+                        provider.getBusinessName() != null ? provider.getBusinessName() : provider.getUser().getName(),
+                        user.getName(),
+                        booking.getBookingNumber(),
+                        service.getServiceName(),
+                        booking.getScheduledDate().toString(),
+                        booking.getScheduledTime().toString(),
+                        booking.getServiceAddress()
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the booking if email fails
+            System.err.println("Failed to send booking notification email: " + e.getMessage());
+        }
 
         return mapToBookingResponse(booking);
     }
@@ -376,7 +396,7 @@ public class BookingService {
                 completedProvider.setCompletedBookings(completedProvider.getCompletedBookings() + 1);
                 BigDecimal rate = BigDecimal.valueOf(completedProvider.getCompletedBookings())
                         .multiply(BigDecimal.valueOf(100))
-                        .divide(BigDecimal.valueOf(completedProvider.getTotalBookings()), 2, BigDecimal.ROUND_HALF_UP);
+                        .divide(BigDecimal.valueOf(completedProvider.getTotalBookings()), 2, RoundingMode.HALF_UP);
                 completedProvider.setCompletionRate(rate);
                 completedProvider.setTotalEarnings(completedProvider.getTotalEarnings().add(booking.getFinalAmount()));
                 providerRepository.save(completedProvider);
@@ -386,6 +406,29 @@ public class BookingService {
         }
 
         booking = bookingRepository.save(booking);
+
+        // Send confirmation email to user when status is CONFIRMED
+        if (newStatus == BookingStatus.CONFIRMED && currentStatus != BookingStatus.CONFIRMED) {
+            try {
+                User user = booking.getUser();
+                ServiceProvider provider = booking.getProvider();
+                if (user != null && user.getEmail() != null) {
+                    emailService.sendBookingConfirmationToUser(
+                            user.getEmail(),
+                            user.getName(),
+                            provider.getBusinessName() != null ? provider.getBusinessName() : provider.getUser().getName(),
+                            booking.getBookingNumber(),
+                            booking.getService().getServiceName(),
+                            booking.getScheduledDate().toString(),
+                            booking.getScheduledTime().toString()
+                    );
+                }
+            } catch (Exception e) {
+                // Log error but don't fail the status update if email fails
+                System.err.println("Failed to send booking confirmation email: " + e.getMessage());
+            }
+        }
+
         return mapToBookingResponse(booking);
     }
 

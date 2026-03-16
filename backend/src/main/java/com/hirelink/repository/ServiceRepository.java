@@ -78,6 +78,30 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
                         "LOWER(p.district) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
                         "LOWER(p.state) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Service> searchServices(@Param("query") String query, Pageable pageable);
+
+    @Query(value = "SELECT s FROM Service s LEFT JOIN FETCH s.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH s.category c " +
+                   "WHERE s.isActive = true AND (" +
+                   "LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                   "LOWER(s.serviceDescription) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                   "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) AND (" +
+                   ":location IS NULL OR :location = '' OR " +
+                   "LOWER(p.city) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(p.district) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(p.state) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(p.basePincode) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(p.baseAddress) LIKE LOWER(CONCAT('%', :location, '%')))",
+           countQuery = "SELECT COUNT(s) FROM Service s LEFT JOIN s.provider p LEFT JOIN s.category c " +
+                        "WHERE s.isActive = true AND (" +
+                        "LOWER(s.serviceName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(s.serviceDescription) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) AND (" +
+                        ":location IS NULL OR :location = '' OR " +
+                        "LOWER(p.city) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(p.district) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(p.state) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(p.basePincode) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(p.baseAddress) LIKE LOWER(CONCAT('%', :location, '%')))")
+    Page<Service> searchServicesWithLocation(@Param("query") String query, @Param("location") String location, Pageable pageable);
     
     @Query(value = "SELECT s FROM Service s LEFT JOIN FETCH s.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH s.category WHERE s.category.categoryId = :categoryId AND s.isActive = true ORDER BY s.averageRating DESC, s.timesBooked DESC",
            countQuery = "SELECT COUNT(s) FROM Service s WHERE s.category.categoryId = :categoryId AND s.isActive = true")

@@ -11,7 +11,8 @@ import {
   FunnelIcon,
   Squares2X2Icon,
   UserGroupIcon,
-  ClockIcon
+  ClockIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -23,20 +24,22 @@ const TABS = [
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
+  const location = searchParams.get('loc') || ''
   const [activeTab, setActiveTab] = useState('services')
   const [searchQuery, setSearchQuery] = useState(query)
+  const [locationQuery, setLocationQuery] = useState(location)
 
   // Fetch services
   const { data: servicesData, isLoading: servicesLoading } = useQuery(
-    ['searchServices', query],
-    () => servicesAPI.search(query, { page: 0, size: 20 }),
+    ['searchServices', query, location],
+    () => servicesAPI.search(query, { location, page: 0, size: 20 }),
     { enabled: !!query }
   )
 
   // Fetch providers from backend
   const { data: providersData, isLoading: providersLoading } = useQuery(
-    ['searchProviders', query],
-    () => providersAPI.search(query, { page: 0, size: 20 }),
+    ['searchProviders', query, location],
+    () => providersAPI.search(query, { location, page: 0, size: 20 }),
     { enabled: !!query }
   )
   
@@ -44,13 +47,58 @@ export default function SearchResults() {
   const providers = providersData?.data?.data?.providers || []
 
   const handleSearch = (newQuery) => {
-    setSearchParams({ q: newQuery })
+    setSearchParams({ q: newQuery, loc: locationQuery })
     setSearchQuery(newQuery)
+  }
+
+  const handleLocationChange = (e) => {
+    setLocationQuery(e.target.value)
+  }
+
+  const handleLocationSubmit = (e) => {
+    e.preventDefault()
+    setSearchParams({ q: searchQuery, loc: locationQuery })
+  }
+
+  const clearLocation = () => {
+    setLocationQuery('')
+    setSearchParams({ q: searchQuery, loc: '' })
+  }
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en', 'User-Agent': 'HireLink-App' } }
+          )
+          const data = await response.json()
+          const locName = data.address?.city || data.address?.town || data.address?.village || data.address?.state || ''
+          if (locName) {
+            setLocationQuery(locName)
+            setSearchParams({ q: searchQuery, loc: locName })
+          }
+        } catch (err) {
+          console.error('Error detecting location:', err)
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error)
+      }
+    )
   }
 
   useEffect(() => {
     setSearchQuery(query)
-  }, [query])
+    setLocationQuery(location)
+  }, [query, location])
 
   const isLoading = servicesLoading || providersLoading
   const totalResults = services.length + providers.length
@@ -61,16 +109,69 @@ export default function SearchResults() {
       <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-8 lg:py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl lg:text-3xl font-bold mb-4">Search Results</h1>
-          <SearchBar 
-            placeholder="Search services, providers..."
-            variant="hero"
-            onSearch={handleSearch}
-            autoFocus={!query}
-          />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <SearchBar 
+                placeholder="Search services, providers..."
+                variant="hero"
+                onSearch={handleSearch}
+                autoFocus={!query}
+              />
+            </div>
+            <div className="md:w-72 lg:w-80">
+              <form onSubmit={handleLocationSubmit} className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <MapPinIcon className="h-5 w-5 text-primary-300 group-focus-within:text-white transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  value={locationQuery}
+                  onChange={handleLocationChange}
+                  placeholder="City, District, State or Pincode..."
+                  className="w-full h-[58px] bg-white/10 border border-white/20 text-white placeholder-primary-200 rounded-2xl py-3 pl-11 pr-24 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all text-sm"
+                />
+                <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {locationQuery && (
+                    <button 
+                      type="button"
+                      onClick={clearLocation}
+                      className="p-1 text-primary-200 hover:text-white transition-colors"
+                      title="Clear location"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button 
+                    type="button"
+                    onClick={detectLocation}
+                    className="p-1 text-primary-200 hover:text-white transition-colors"
+                    title="Detect my location"
+                  >
+                    <MapPinIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <button 
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white text-primary-700 rounded-xl hover:bg-primary-50 transition-colors shadow-sm"
+                >
+                  <MagnifyingGlassIcon className="h-5 w-5" />
+                </button>
+              </form>
+            </div>
+          </div>
           {query && !isLoading && (
-            <p className="mt-4 text-primary-100">
-              Found {totalResults} result{totalResults !== 1 ? 's' : ''} for "{query}"
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-primary-100">
+                Found {totalResults} result{totalResults !== 1 ? 's' : ''} for "{query}"
+              </p>
+              {location && (
+                <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2">
+                  <MapPinIcon className="h-3 w-3" />
+                  {location}
+                  <button onClick={clearLocation} className="hover:text-red-300">×</button>
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

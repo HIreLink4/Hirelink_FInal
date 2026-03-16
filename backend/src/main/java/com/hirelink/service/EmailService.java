@@ -97,6 +97,134 @@ public class EmailService {
             """.formatted(otp);
     }
 
+    public void sendNewBookingNotificationToProvider(
+            String toEmail,
+            String providerName,
+            String customerName,
+            String bookingNumber,
+            String serviceName,
+            String date,
+            String time,
+            String address) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("New Booking Received - " + bookingNumber);
+            message.setText(buildNewBookingEmailBody(providerName, customerName, bookingNumber, serviceName, date, time, address));
+
+            mailSender.send(message);
+            log.info("New booking notification email sent to provider: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send new booking email to provider {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildNewBookingEmailBody(
+            String providerName,
+            String customerName,
+            String bookingNumber,
+            String serviceName,
+            String date,
+            String time,
+            String address) {
+        return """
+            Hello %s,
+
+            You have received a new booking request on HireLink.
+
+            Booking Details:
+            - Booking Number: %s
+            - Service: %s
+            - Customer Name: %s
+            - Scheduled Date: %s
+            - Scheduled Time: %s
+            - Service Location: %s
+
+            Please log in to your HireLink provider portal to accept or reject this booking request.
+
+            You can access your portal here: %s/profile
+
+            Best regards,
+            HireLink Team
+
+            ---
+            This is an automated message. Please do not reply.
+            """.formatted(
+                providerName,
+                bookingNumber,
+                serviceName,
+                customerName,
+                date,
+                time,
+                address,
+                frontendUrl
+        );
+    }
+
+    public void sendBookingConfirmationToUser(
+            String toEmail,
+            String customerName,
+            String providerName,
+            String bookingNumber,
+            String serviceName,
+            String date,
+            String time) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Booking Confirmed - " + bookingNumber);
+            message.setText(buildBookingConfirmationEmailBody(customerName, providerName, bookingNumber, serviceName, date, time));
+
+            mailSender.send(message);
+            log.info("Booking confirmation email sent to user: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send booking confirmation email to user {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildBookingConfirmationEmailBody(
+            String customerName,
+            String providerName,
+            String bookingNumber,
+            String serviceName,
+            String date,
+            String time) {
+        return """
+            Hello %s,
+
+            Your booking has been confirmed by the service provider.
+
+            Booking Details:
+            - Booking Number: %s
+            - Service: %s
+            - Provider: %s
+            - Scheduled Date: %s
+            - Scheduled Time: %s
+
+            The provider will arrive at the scheduled time. You can view more details in your HireLink dashboard.
+
+            You can access your dashboard here: %s/bookings
+
+            Best regards,
+            HireLink Team
+
+            ---
+            This is an automated message. Please do not reply.
+            """.formatted(
+                customerName,
+                bookingNumber,
+                serviceName,
+                providerName,
+                date,
+                time,
+                frontendUrl
+        );
+    }
+
     public void sendRescheduleNotificationEmail(
             String toEmail, 
             String providerName, 

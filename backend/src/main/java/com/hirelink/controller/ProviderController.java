@@ -99,9 +99,10 @@ public class ProviderController {
     @Operation(summary = "Search providers")
     public ResponseEntity<ApiResponse<ProviderDTO.ProviderListResponse>> searchProviders(
             @RequestParam("query") String query,
+            @RequestParam(name = "location", required = false) String location,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        ProviderDTO.ProviderListResponse response = providerService.searchProviders(query, page, size);
+        ProviderDTO.ProviderListResponse response = providerService.searchProviders(query, location, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

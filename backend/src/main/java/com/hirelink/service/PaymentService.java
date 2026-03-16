@@ -3,6 +3,8 @@ package com.hirelink.service;
 import com.hirelink.dto.PaymentDTO;
 import com.hirelink.entity.Booking;
 import com.hirelink.entity.Payment;
+import com.hirelink.entity.User;
+import com.hirelink.entity.ServiceProvider;
 import com.hirelink.exception.BadRequestException;
 import com.hirelink.exception.ResourceNotFoundException;
 import com.hirelink.repository.BookingRepository;
@@ -35,18 +37,21 @@ public class PaymentService {
     private final String razorpayKeySecret;
     private final boolean mockMode;
     private final BigDecimal bookingCharge;
+    private final EmailService emailService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             BookingRepository bookingRepository,
             @Value("${razorpay.key-id}") String razorpayKeyId,
             @Value("${razorpay.key-secret}") String razorpayKeySecret,
-            @Value("${hirelink.booking-charge:8}") BigDecimal bookingCharge) {
+            @Value("${hirelink.booking-charge:8}") BigDecimal bookingCharge,
+            EmailService emailService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.razorpayKeyId = razorpayKeyId;
         this.razorpayKeySecret = razorpayKeySecret;
         this.bookingCharge = bookingCharge;
+        this.emailService = emailService;
 
         boolean shouldMock = razorpayKeyId == null || razorpayKeySecret == null
                 || razorpayKeyId.isBlank() || razorpayKeySecret.isBlank()
@@ -219,6 +224,25 @@ public class PaymentService {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
         }
         bookingRepository.save(booking);
+
+        // Send confirmation email to user
+        try {
+            User user = booking.getUser();
+            ServiceProvider provider = booking.getProvider();
+            if (user != null && user.getEmail() != null) {
+                emailService.sendBookingConfirmationToUser(
+                        user.getEmail(),
+                        user.getName(),
+                        provider.getBusinessName() != null ? provider.getBusinessName() : provider.getUser().getName(),
+                        booking.getBookingNumber(),
+                        booking.getService().getServiceName(),
+                        booking.getScheduledDate().toString(),
+                        booking.getScheduledTime().toString()
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send booking confirmation email after payment: {}", e.getMessage());
+        }
 
         log.info("Payment verified for booking {}: paymentId={}", booking.getBookingNumber(), request.getRazorpayPaymentId());
 

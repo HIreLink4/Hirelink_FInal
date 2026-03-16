@@ -53,9 +53,43 @@ public interface ServiceProviderRepository extends JpaRepository<ServiceProvider
            "LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(sp.tagline) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(sp.specializations) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.city) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.district) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.state) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(sp.baseAddress) LIKE LOWER(CONCAT('%', :query, '%'))) " +
            "AND sp.isAvailable = true")
     Page<ServiceProvider> searchProviders(@Param("query") String query, Pageable pageable);
+
+    @Query(value = "SELECT DISTINCT sp FROM ServiceProvider sp " +
+                   "LEFT JOIN FETCH sp.user u " +
+                   "LEFT JOIN sp.services s " +
+                   "LEFT JOIN s.category c " +
+                   "WHERE (LOWER(sp.businessName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                   "LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                   "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) AND (" +
+                   ":location IS NULL OR :location = '' OR " +
+                   "LOWER(sp.city) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(sp.district) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(sp.state) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(sp.basePincode) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                   "LOWER(sp.baseAddress) LIKE LOWER(CONCAT('%', :location, '%'))) " +
+                   "AND sp.isAvailable = true",
+           countQuery = "SELECT COUNT(DISTINCT sp) FROM ServiceProvider sp " +
+                        "LEFT JOIN sp.user u " +
+                        "LEFT JOIN sp.services s " +
+                        "LEFT JOIN s.category c " +
+                        "WHERE (LOWER(sp.businessName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+                        "LOWER(c.categoryName) LIKE LOWER(CONCAT('%', :query, '%'))) AND (" +
+                        ":location IS NULL OR :location = '' OR " +
+                        "LOWER(sp.city) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(sp.district) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(sp.state) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(sp.basePincode) LIKE LOWER(CONCAT('%', :location, '%')) OR " +
+                        "LOWER(sp.baseAddress) LIKE LOWER(CONCAT('%', :location, '%'))) " +
+                        "AND sp.isAvailable = true")
+    Page<ServiceProvider> searchProvidersWithLocation(@Param("query") String query, @Param("location") String location, Pageable pageable);
     
     @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user LEFT JOIN FETCH sp.services WHERE sp.providerId = :id")
     Optional<ServiceProvider> findByIdWithDetails(@Param("id") Long id);

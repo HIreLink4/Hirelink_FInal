@@ -62,9 +62,10 @@ public class ServiceController {
     @Operation(summary = "Search services")
     public ResponseEntity<ApiResponse<ServiceDTO.ServiceListResponse>> searchServices(
             @RequestParam("query") String query,
+            @RequestParam(name = "location", required = false) String location,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        ServiceDTO.ServiceListResponse response = serviceService.searchServices(query, page, size);
+        ServiceDTO.ServiceListResponse response = serviceService.searchServices(query, location, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
