@@ -117,9 +117,13 @@ export default function ResetPassword() {
                 {...register('newPassword', {
                   required: 'Password is required',
                   minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                  pattern: {
+                    value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/,
+                    message: 'Password must contain uppercase, lowercase, number and special character'
+                  }
                 })}
                 className={`input pl-12 pr-12 ${errors.newPassword ? 'input-error' : ''}`}
-                placeholder="Enter new password"
+                placeholder="New strong password"
               />
               <button
                 type="button"

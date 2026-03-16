@@ -32,6 +32,7 @@ public class BookingService {
     private final ServiceProviderRepository providerRepository;
     private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
 
     @Transactional
     public BookingDTO.BookingResponse createBooking(Long userId, BookingDTO.CreateBookingRequest request) {
@@ -468,6 +469,28 @@ public class BookingService {
         booking.setBookingStatus(BookingStatus.RESCHEDULE_PENDING);
 
         booking = bookingRepository.save(booking);
+
+        // Send notification email to provider
+        try {
+            ServiceProvider provider = booking.getProvider();
+            if (provider != null && provider.getUser() != null && provider.getUser().getEmail() != null) {
+                emailService.sendRescheduleNotificationEmail(
+                        provider.getUser().getEmail(),
+                        provider.getBusinessName() != null ? provider.getBusinessName() : provider.getUser().getName(),
+                        booking.getUser().getName(),
+                        booking.getBookingNumber(),
+                        booking.getScheduledDate().toString(),
+                        booking.getScheduledTime().toString(),
+                        request.getRequestedDate().toString(),
+                        request.getRequestedTime().toString(),
+                        request.getReason()
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the reschedule request if email fails
+            System.err.println("Failed to send reschedule email: " + e.getMessage());
+        }
+
         return mapToBookingResponse(booking);
     }
 

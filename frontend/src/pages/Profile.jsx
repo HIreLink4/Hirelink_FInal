@@ -846,13 +846,14 @@ export default function Profile() {
                         type={showPassword ? 'text' : 'password'}
                         {...registerPassword('password', {
                           required: 'Password is required',
-                          minLength: {
-                            value: 8,
-                            message: 'Password must be at least 8 characters'
+                          minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                          pattern: {
+                            value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/,
+                            message: 'Password must contain uppercase, lowercase, number and special character'
                           }
                         })}
                         className={`input pl-12 pr-12 ${passwordErrors.password ? 'input-error' : ''}`}
-                        placeholder="Enter a strong password"
+                        placeholder="Min 8 chars, 1 upper, 1 lower, 1 num, 1 special"
                       />
                       <button
                         type="button"

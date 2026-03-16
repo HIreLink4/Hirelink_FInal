@@ -226,9 +226,16 @@ export default function Register() {
               <LockClosedIcon className="h-5 w-5 text-gray-400" />
             </div>
             <input type={showPassword ? 'text' : 'password'}
-              {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'Password must be at least 8 characters' } })}
+              {...register('password', { 
+                required: 'Password is required', 
+                minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                pattern: { 
+                  value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$/, 
+                  message: 'Password must contain uppercase, lowercase, number and special character' 
+                }
+              })}
               className={`input pl-12 pr-12 ${errors.password ? 'input-error' : ''}`}
-              placeholder="Minimum 8 characters" />
+              placeholder="Min 8 chars, 1 upper, 1 lower, 1 num, 1 special" />
             <button type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600">
               {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}

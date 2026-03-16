@@ -97,6 +97,83 @@ public class EmailService {
             """.formatted(otp);
     }
 
+    public void sendRescheduleNotificationEmail(
+            String toEmail, 
+            String providerName, 
+            String customerName, 
+            String bookingNumber,
+            String oldDate,
+            String oldTime,
+            String newDate,
+            String newTime,
+            String reason) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("HireLink - Booking Reschedule Request: " + bookingNumber);
+            message.setText(buildRescheduleEmailBody(providerName, customerName, bookingNumber, oldDate, oldTime, newDate, newTime, reason));
+
+            mailSender.send(message);
+            log.info("Reschedule notification email sent successfully to provider: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send reschedule notification email to provider {}: {}", toEmail, e.getMessage());
+            // No fallback needed for notification emails, but we log the error
+        }
+    }
+
+    private String buildRescheduleEmailBody(
+            String providerName, 
+            String customerName, 
+            String bookingNumber,
+            String oldDate,
+            String oldTime,
+            String newDate,
+            String newTime,
+            String reason) {
+        return """
+            Hello %s,
+
+            A customer has requested to reschedule their booking.
+
+            Booking Details:
+            - Booking Number: %s
+            - Customer Name: %s
+
+            Previous Schedule:
+            - Date: %s
+            - Time: %s
+
+            New Requested Schedule:
+            - Date: %s
+            - Time: %s
+
+            Reason for Reschedule:
+            %s
+
+            Please log in to your HireLink provider portal to accept or reject this reschedule request.
+
+            You can access your portal here: %s/profile
+
+            Best regards,
+            HireLink Team
+
+            ---
+            This is an automated message. Please do not reply.
+            """.formatted(
+                providerName, 
+                bookingNumber, 
+                customerName, 
+                oldDate, 
+                oldTime, 
+                newDate, 
+                newTime, 
+                reason != null ? reason : "No reason provided", 
+                frontendUrl
+            );
+    }
+
     private void logPasswordResetFallback(String email, String tokenOrOtp) {
         log.warn("");
         log.warn("==============================================================");

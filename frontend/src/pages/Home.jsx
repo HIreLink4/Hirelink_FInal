@@ -129,16 +129,6 @@ export default function Home() {
                   placeholder="What service do you need?"
                   className="w-full px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none text-lg"
                 />
-                {isAuthenticated && (
-                  <button 
-                    type="button"
-                    onClick={() => document.getElementById('location-trigger')?.click()}
-                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all mr-2"
-                    title="Find providers near you"
-                  >
-                    <MapPinIcon className="h-6 w-6" />
-                  </button>
-                )}
               </div>
               <button type="submit" className="btn-accent px-8 py-3 text-lg">
                 Search
