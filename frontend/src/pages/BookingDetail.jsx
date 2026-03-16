@@ -30,6 +30,7 @@ const statusColors = {
   COMPLETED: 'bg-green-100 text-green-800 border-green-200',
   CANCELLED: 'bg-red-100 text-red-800 border-red-200',
   REJECTED: 'bg-gray-100 text-gray-800 border-gray-200',
+  RESCHEDULE_PENDING: 'bg-orange-100 text-orange-800 border-orange-200',
 }
 
 export default function BookingDetail() {
@@ -43,6 +44,12 @@ export default function BookingDetail() {
   const [reviewText, setReviewText] = useState('')
   const [workSummary, setWorkSummary] = useState('')
   const [payingInProgress, setPayingInProgress] = useState(false)
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+  const [rescheduleData, setRescheduleData] = useState({
+    requestedDate: format(new Date(), 'yyyy-MM-dd'),
+    requestedTime: '10:00',
+    reason: ''
+  })
 
   const isAdmin = user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN') || user?.userType === 'ADMIN' || user?.userType === 'SUPER_ADMIN'
 
@@ -95,6 +102,33 @@ export default function BookingDetail() {
       },
       onError: (error) => {
         toast.error(error.response?.data?.message || 'Failed to submit review')
+      }
+    }
+  )
+  
+  const rescheduleRequestMutation = useMutation(
+    (data) => bookingsAPI.rescheduleRequest(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['booking', id])
+        toast.success('Reschedule request sent to provider')
+        setShowRescheduleModal(false)
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to request reschedule')
+      }
+    }
+  )
+
+  const rescheduleResponseMutation = useMutation(
+    (accept) => bookingsAPI.rescheduleRespond(id, accept),
+    {
+      onSuccess: (_, accept) => {
+        queryClient.invalidateQueries(['booking', id])
+        toast.success(accept ? 'Reschedule accepted!' : 'Reschedule rejected')
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to respond to reschedule')
       }
     }
   )
@@ -220,8 +254,11 @@ export default function BookingDetail() {
   // Provider actions: accept → customer pays (auto-confirms) → provider starts → completes
   const canAccept = isBookingProvider && booking.bookingStatus === 'PENDING'
   const canReject = isBookingProvider && booking.bookingStatus === 'PENDING'
-  const canStart = isBookingProvider && booking.bookingStatus === 'CONFIRMED' && booking.paymentStatus === 'PAID'
   const canComplete = isBookingProvider && booking.bookingStatus === 'IN_PROGRESS'
+  const canStart = isBookingProvider && booking.bookingStatus === 'CONFIRMED' && booking.paymentStatus === 'PAID'
+  
+  const canReschedule = isBookingCustomer && booking.paymentStatus === 'PAID' && ['ACCEPTED', 'CONFIRMED'].includes(booking.bookingStatus)
+  const isReschedulePending = booking.bookingStatus === 'RESCHEDULE_PENDING'
 
   return (
     <div className="animate-fadeIn">
@@ -281,6 +318,61 @@ export default function BookingDetail() {
                     <p className="font-medium">{booking.scheduledTime}</p>
                   </div>
                 </div>
+
+                {/* Reschedule Request Info */}
+                {isReschedulePending && (
+                  <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                    <h4 className="text-sm font-bold text-orange-800 mb-2 flex items-center gap-2">
+                      <CalendarDaysIcon className="h-4 w-4" />
+                      Reschedule Requested
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-orange-600 font-medium text-xs uppercase">Requested Date</p>
+                        <p className="text-gray-900 font-semibold">
+                          {booking.requestedRescheduleDate ? format(new Date(booking.requestedRescheduleDate), 'MMM d, yyyy') : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-orange-600 font-medium text-xs uppercase">Requested Time</p>
+                        <p className="text-gray-900 font-semibold">{booking.requestedRescheduleTime}</p>
+                      </div>
+                    </div>
+                    {booking.rescheduleReason && (
+                      <div className="mt-2">
+                        <p className="text-orange-600 font-medium text-xs uppercase">Reason</p>
+                        <p className="text-gray-700 italic">"{booking.rescheduleReason}"</p>
+                      </div>
+                    )}
+                    
+                    {isBookingProvider && (
+                      <div className="flex gap-2 mt-4">
+                        <button 
+                          onClick={() => rescheduleResponseMutation.mutate(true)}
+                          disabled={rescheduleResponseMutation.isLoading}
+                          className="flex-1 text-xs bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700"
+                        >
+                          Accept
+                        </button>
+                        <button 
+                          onClick={() => rescheduleResponseMutation.mutate(false)}
+                          disabled={rescheduleResponseMutation.isLoading}
+                          className="flex-1 text-xs bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                    
+                    {isBookingCustomer && (
+                      <p className="text-xs text-orange-700 mt-2 italic flex items-center gap-1">
+                        <ClockIcon className="h-3 w-3" />
+                        Waiting for provider to accept...
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-start gap-3">
                   <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
@@ -518,6 +610,15 @@ export default function BookingDetail() {
                     Write a Review
                   </button>
                 )}
+                {canReschedule && (
+                  <button
+                    onClick={() => setShowRescheduleModal(true)}
+                    className="w-full btn-secondary text-primary-600 border-primary-200 hover:bg-primary-50 flex items-center justify-center gap-2"
+                  >
+                    <CalendarDaysIcon className="h-5 w-5" />
+                    Reschedule Appointment
+                  </button>
+                )}
                 {canCancel && (
                   <button
                     onClick={() => setShowCancelModal(true)}
@@ -610,6 +711,64 @@ export default function BookingDetail() {
                 className="flex-1 btn-primary"
               >
                 {reviewMutation.isLoading ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full animate-slideUp">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Reschedule Appointment</h3>
+            <p className="text-sm text-gray-500 mb-6">Request a new date and time for your service. The provider needs to accept this request.</p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
+                <input
+                  type="date"
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  value={rescheduleData.requestedDate}
+                  onChange={(e) => setRescheduleData({ ...rescheduleData, requestedDate: e.target.value })}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
+                <input
+                  type="time"
+                  value={rescheduleData.requestedTime}
+                  onChange={(e) => setRescheduleData({ ...rescheduleData, requestedTime: e.target.value })}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Rescheduling</label>
+                <textarea
+                  value={rescheduleData.reason}
+                  onChange={(e) => setRescheduleData({ ...rescheduleData, reason: e.target.value })}
+                  placeholder="Tell the provider why you need to reschedule..."
+                  className="input"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="flex-1 btn-secondary"
+              >
+                Keep Original
+              </button>
+              <button
+                onClick={() => rescheduleRequestMutation.mutate(rescheduleData)}
+                disabled={rescheduleRequestMutation.isLoading}
+                className="flex-1 btn-primary"
+              >
+                {rescheduleRequestMutation.isLoading ? 'Sending...' : 'Send Request'}
               </button>
             </div>
           </div>

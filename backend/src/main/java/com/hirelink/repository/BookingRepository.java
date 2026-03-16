@@ -62,10 +62,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Page<Booking> findByBookingStatusOrderByCreatedAtDesc(@Param("status") BookingStatus status, Pageable pageable);
     
     // Recent bookings for dashboard - sorted by PENDING first, then by date
-    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH b.service s LEFT JOIN FETCH s.category WHERE b.user.userId = :userId ORDER BY CASE WHEN b.bookingStatus = 'PENDING' THEN 0 WHEN b.bookingStatus = 'ACCEPTED' THEN 1 WHEN b.bookingStatus = 'CONFIRMED' THEN 2 WHEN b.bookingStatus = 'IN_PROGRESS' THEN 3 ELSE 4 END, b.createdAt DESC")
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH b.service s LEFT JOIN FETCH s.category WHERE b.user.userId = :userId ORDER BY CASE WHEN b.bookingStatus = 'PENDING' THEN 0 WHEN b.bookingStatus = 'RESCHEDULE_PENDING' THEN 1 WHEN b.bookingStatus = 'ACCEPTED' THEN 2 WHEN b.bookingStatus = 'CONFIRMED' THEN 3 WHEN b.bookingStatus = 'IN_PROGRESS' THEN 4 ELSE 5 END, b.createdAt DESC")
     List<Booking> findRecentByUserIdPendingFirst(@Param("userId") Long userId, Pageable pageable);
     
-    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH b.service s LEFT JOIN FETCH s.category WHERE b.provider.providerId = :providerId ORDER BY CASE WHEN b.bookingStatus = 'PENDING' THEN 0 WHEN b.bookingStatus = 'ACCEPTED' THEN 1 WHEN b.bookingStatus = 'CONFIRMED' THEN 2 WHEN b.bookingStatus = 'IN_PROGRESS' THEN 3 ELSE 4 END, b.createdAt DESC")
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.provider p LEFT JOIN FETCH p.user LEFT JOIN FETCH b.service s LEFT JOIN FETCH s.category WHERE b.provider.providerId = :providerId ORDER BY CASE WHEN b.bookingStatus = 'PENDING' THEN 0 WHEN b.bookingStatus = 'RESCHEDULE_PENDING' THEN 1 WHEN b.bookingStatus = 'ACCEPTED' THEN 2 WHEN b.bookingStatus = 'CONFIRMED' THEN 3 WHEN b.bookingStatus = 'IN_PROGRESS' THEN 4 ELSE 5 END, b.createdAt DESC")
     List<Booking> findRecentByProviderIdPendingFirst(@Param("providerId") Long providerId, Pageable pageable);
     
     // Search bookings by keyword (booking number, service name, customer name)

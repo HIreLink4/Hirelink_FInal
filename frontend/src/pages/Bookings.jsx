@@ -24,6 +24,7 @@ const statusColors = {
   COMPLETED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-red-100 text-red-800',
   REJECTED: 'bg-gray-100 text-gray-800',
+  RESCHEDULE_PENDING: 'bg-orange-100 text-orange-800',
 }
 
 const statusFilters = [
@@ -33,6 +34,7 @@ const statusFilters = [
   { label: 'In Progress', value: 'IN_PROGRESS' },
   { label: 'Completed', value: 'COMPLETED' },
   { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'Reschedule Req', value: 'RESCHEDULE_PENDING' },
 ]
 
 export default function Bookings() {

@@ -125,6 +125,8 @@ export const bookingsAPI = {
     reason 
   }),
   addReview: (id, data) => api.post(`/bookings/${id}/review`, data),
+  rescheduleRequest: (id, data) => api.post(`/bookings/${id}/reschedule-request`, data),
+  rescheduleRespond: (id, accept) => api.post(`/bookings/${id}/reschedule-respond`, null, { params: { accept } }),
   search: (keyword, params) => api.get('/bookings/search', { params: { keyword, ...params } }),
 }
 

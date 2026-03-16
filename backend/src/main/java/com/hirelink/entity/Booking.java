@@ -160,6 +160,15 @@ public class Booking {
     @Column(name = "provider_notes", columnDefinition = "TEXT")
     private String providerNotes;
 
+    @Column(name = "requested_reschedule_date")
+    private LocalDate requestedRescheduleDate;
+
+    @Column(name = "requested_reschedule_time")
+    private LocalTime requestedRescheduleTime;
+
+    @Column(name = "reschedule_reason", columnDefinition = "TEXT")
+    private String rescheduleReason;
+
     @Column(name = "work_summary", columnDefinition = "TEXT")
     private String workSummary;
 
@@ -190,7 +199,7 @@ public class Booking {
     }
 
     public enum BookingStatus {
-        PENDING, ACCEPTED, REJECTED, CONFIRMED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED, DISPUTED, REFUNDED
+        PENDING, ACCEPTED, REJECTED, CONFIRMED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED, DISPUTED, REFUNDED, RESCHEDULE_PENDING
     }
 
     public enum UrgencyLevel {

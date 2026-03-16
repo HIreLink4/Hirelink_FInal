@@ -12,9 +12,10 @@ const statusColors = {
   DISPUTED: 'bg-purple-100 text-purple-700',
   REFUNDED: 'bg-gray-100 text-gray-700',
   PAUSED: 'bg-gray-100 text-gray-600',
+  RESCHEDULE_PENDING: 'bg-orange-100 text-orange-700',
 }
 
-const BOOKING_STATUSES = ['PENDING', 'ACCEPTED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'REJECTED']
+const BOOKING_STATUSES = ['PENDING', 'ACCEPTED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'REJECTED', 'RESCHEDULE_PENDING']
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([])

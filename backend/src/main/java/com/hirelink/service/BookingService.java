@@ -118,8 +118,6 @@ public class BookingService {
                 return getUserBookings(userId, status, page, size);
             case PROVIDER:
                 // Get provider ID for this user
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
                 ServiceProvider provider = providerRepository.findByUserUserId(userId)
                         .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found for this user"));
                 return getProviderBookings(provider.getProviderId(), status, page, size);
@@ -446,12 +444,72 @@ public class BookingService {
         providerRepository.save(provider);
     }
 
+    @Transactional
+    public BookingDTO.BookingResponse requestReschedule(Long bookingId, Long userId, BookingDTO.RescheduleRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getUserId().equals(userId)) {
+            throw new BadRequestException("You can only reschedule your own bookings");
+        }
+
+        if (booking.getPaymentStatus() != Booking.PaymentStatus.PAID) {
+            throw new BadRequestException("You can only reschedule after successful payment");
+        }
+
+        List<BookingStatus> allowedStatuses = Arrays.asList(BookingStatus.ACCEPTED, BookingStatus.CONFIRMED);
+        if (!allowedStatuses.contains(booking.getBookingStatus())) {
+            throw new BadRequestException("Booking cannot be rescheduled in current status: " + booking.getBookingStatus());
+        }
+
+        booking.setRequestedRescheduleDate(request.getRequestedDate());
+        booking.setRequestedRescheduleTime(request.getRequestedTime());
+        booking.setRescheduleReason(request.getReason());
+        booking.setBookingStatus(BookingStatus.RESCHEDULE_PENDING);
+
+        booking = bookingRepository.save(booking);
+        return mapToBookingResponse(booking);
+    }
+
+    @Transactional
+    public BookingDTO.BookingResponse respondToReschedule(Long bookingId, Long userId, boolean accept) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getProvider().getUser().getUserId().equals(userId)) {
+            throw new BadRequestException("Only the service provider can respond to reschedule requests");
+        }
+
+        if (booking.getBookingStatus() != BookingStatus.RESCHEDULE_PENDING) {
+            throw new BadRequestException("No pending reschedule request found for this booking");
+        }
+
+        if (accept) {
+            booking.setScheduledDate(booking.getRequestedRescheduleDate());
+            booking.setScheduledTime(booking.getRequestedRescheduleTime());
+            booking.setBookingStatus(BookingStatus.CONFIRMED);
+        } else {
+            // Revert to CONFIRMED or ACCEPTED? 
+            // If it was PAID, it was likely CONFIRMED.
+            booking.setBookingStatus(BookingStatus.CONFIRMED);
+        }
+
+        // Clear request fields
+        booking.setRequestedRescheduleDate(null);
+        booking.setRequestedRescheduleTime(null);
+        booking.setRescheduleReason(null);
+
+        booking = bookingRepository.save(booking);
+        return mapToBookingResponse(booking);
+    }
+
     private void validateStatusTransition(BookingStatus from, BookingStatus to) {
         // Define valid transitions
         boolean valid = switch (from) {
             case PENDING -> to == BookingStatus.ACCEPTED || to == BookingStatus.REJECTED || to == BookingStatus.CANCELLED;
-            case ACCEPTED -> to == BookingStatus.CONFIRMED || to == BookingStatus.CANCELLED;
-            case CONFIRMED -> to == BookingStatus.IN_PROGRESS || to == BookingStatus.CANCELLED;
+            case ACCEPTED -> to == BookingStatus.CONFIRMED || to == BookingStatus.CANCELLED || to == BookingStatus.RESCHEDULE_PENDING;
+            case CONFIRMED -> to == BookingStatus.IN_PROGRESS || to == BookingStatus.CANCELLED || to == BookingStatus.RESCHEDULE_PENDING;
+            case RESCHEDULE_PENDING -> to == BookingStatus.CONFIRMED || to == BookingStatus.CANCELLED;
             case IN_PROGRESS -> to == BookingStatus.PAUSED || to == BookingStatus.COMPLETED || to == BookingStatus.CANCELLED;
             case PAUSED -> to == BookingStatus.IN_PROGRESS || to == BookingStatus.CANCELLED;
             case COMPLETED -> to == BookingStatus.DISPUTED;
@@ -565,6 +623,9 @@ public class BookingService {
                 .cancellationReason(booking.getCancellationReason())
                 .cancelledAt(booking.getCancelledAt())
                 .providerNotes(booking.getProviderNotes())
+                .requestedRescheduleDate(booking.getRequestedRescheduleDate())
+                .requestedRescheduleTime(booking.getRequestedRescheduleTime())
+                .rescheduleReason(booking.getRescheduleReason())
                 .workSummary(booking.getWorkSummary())
                 .userRating(booking.getUserRating())
                 .createdAt(booking.getCreatedAt())

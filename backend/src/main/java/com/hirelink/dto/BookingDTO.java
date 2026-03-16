@@ -86,6 +86,9 @@ public class BookingDTO {
         private String cancellationReason;
         private LocalDateTime cancelledAt;
         private String providerNotes;
+        private LocalDate requestedRescheduleDate;
+        private LocalTime requestedRescheduleTime;
+        private String rescheduleReason;
         private String workSummary;
         private BigDecimal userRating;
         private LocalDateTime createdAt;
@@ -178,5 +181,20 @@ public class BookingDTO {
         private String reviewTitle;
         private String reviewText;
         private List<String> reviewImages;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RescheduleRequest {
+        @NotNull(message = "New date is required")
+        @Future(message = "New date must be in the future")
+        private LocalDate requestedDate;
+
+        @NotNull(message = "New time is required")
+        private LocalTime requestedTime;
+
+        private String reason;
     }
 }

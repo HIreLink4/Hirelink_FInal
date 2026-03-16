@@ -142,6 +142,33 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success("Review added successfully"));
     }
 
+    @PostMapping("/{id}/reschedule-request")
+    @Operation(summary = "Request a reschedule (requires CUSTOMER role and PAID status)")
+    public ResponseEntity<ApiResponse<BookingDTO.BookingResponse>> requestReschedule(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody BookingDTO.RescheduleRequest request) {
+        if (!hasRole(userDetails, "CUSTOMER")) {
+            throw new BadRequestException("Only customers can request a reschedule");
+        }
+        BookingDTO.BookingResponse response = bookingService.requestReschedule(id, userDetails.getUserId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Reschedule request sent to provider", response));
+    }
+
+    @PostMapping("/{id}/reschedule-respond")
+    @Operation(summary = "Accept or reject a reschedule request (requires PROVIDER role)")
+    public ResponseEntity<ApiResponse<BookingDTO.BookingResponse>> respondToReschedule(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam boolean accept) {
+        if (!hasRole(userDetails, "PROVIDER")) {
+            throw new BadRequestException("Only providers can respond to reschedule requests");
+        }
+        BookingDTO.BookingResponse response = bookingService.respondToReschedule(id, userDetails.getUserId(), accept);
+        String msg = accept ? "Reschedule request accepted" : "Reschedule request rejected";
+        return ResponseEntity.ok(ApiResponse.success(msg, response));
+    }
+
     /**
      * Resolve which role the user wants to view bookings as.
      * Defaults to CUSTOMER if the requested role isn't in their authorities.
