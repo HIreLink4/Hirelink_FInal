@@ -29,6 +29,11 @@ public interface ServiceProviderRepository extends JpaRepository<ServiceProvider
     
     @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user WHERE sp.basePincode = :pincode AND sp.isAvailable = true")
     List<ServiceProvider> findByPincodeAndAvailable(@Param("pincode") String pincode);
+
+    @Query("SELECT sp FROM ServiceProvider sp LEFT JOIN FETCH sp.user " +
+           "WHERE (sp.city LIKE %:query% OR sp.district LIKE %:query% OR sp.state LIKE %:query% OR sp.baseAddress LIKE %:query% OR sp.basePincode LIKE %:query%) " +
+           "AND sp.isAvailable = true")
+    List<ServiceProvider> findByLocationName(@Param("query") String query);
     
     @Query("SELECT DISTINCT sp FROM ServiceProvider sp " +
            "LEFT JOIN FETCH sp.user " +

@@ -65,6 +65,15 @@ public class ServiceProvider {
     @Column(name = "base_pincode", length = 6)
     private String basePincode;
 
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 100)
+    private String state;
+
     @Column(name = "service_radius_km")
     @Builder.Default
     private Integer serviceRadiusKm = 10;

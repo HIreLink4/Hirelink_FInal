@@ -109,6 +109,7 @@ export const providersAPI = {
   getByCategory: (categoryId, params) => api.get(`/providers/category/${categoryId}`, { params }),
   getMyProfile: () => api.get('/providers/me'),
   updateMyProfile: (data) => api.put('/providers/me', data),
+  searchByLocation: (query) => api.get('/providers/nearby/search', { params: { query } }),
 }
 
 // Bookings API

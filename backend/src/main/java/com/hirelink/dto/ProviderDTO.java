@@ -28,6 +28,9 @@ public class ProviderDTO {
         private List<String> specializations;
         private List<String> certifications;
         private String basePincode;
+        private String city;
+        private String district;
+        private String state;
         private String baseAddress;
         private BigDecimal baseLatitude;
         private BigDecimal baseLongitude;
@@ -68,6 +71,9 @@ public class ProviderDTO {
         private String profileImageUrl;
         private Integer experienceYears;
         private String basePincode;
+        private String city;
+        private String district;
+        private String state;
         private BigDecimal baseLatitude;
         private BigDecimal baseLongitude;
         private Integer serviceRadiusKm;
@@ -118,6 +124,9 @@ public class ProviderDTO {
         private Integer experienceYears;
         private List<String> specializations;
         private String basePincode;
+        private String city;
+        private String district;
+        private String state;
         private Integer serviceRadiusKm;
     }
 }

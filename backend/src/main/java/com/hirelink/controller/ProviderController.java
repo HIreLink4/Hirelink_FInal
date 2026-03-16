@@ -32,7 +32,6 @@ public class ProviderController {
     private final BookingService bookingService;
     private final ServiceService serviceService;
     private final ServiceProviderRepository providerRepository;
-    private final com.hirelink.service.LocationService locationService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get provider by ID")
@@ -76,6 +75,14 @@ public class ProviderController {
             @RequestParam(name = "categoryId", required = false) Long categoryId) {
         List<ProviderDTO.ProviderSummary> providers = providerService.getNearbyProvidersByLocation(
                 lat, lng, radiusKm, categoryId);
+        return ResponseEntity.ok(ApiResponse.success(providers));
+    }
+
+    @GetMapping("/nearby/search")
+    @Operation(summary = "Search nearby providers by city, district, state or address")
+    public ResponseEntity<ApiResponse<List<ProviderDTO.ProviderSummary>>> getProvidersByLocationName(
+            @RequestParam("query") String query) {
+        List<ProviderDTO.ProviderSummary> providers = providerService.searchByLocation(query);
         return ResponseEntity.ok(ApiResponse.success(providers));
     }
 

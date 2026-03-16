@@ -138,6 +138,14 @@ public class ProviderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<ProviderDTO.ProviderSummary> searchByLocation(String query) {
+        List<ServiceProvider> providers = providerRepository.findByLocationName(query);
+        return providers.stream()
+                .map(this::mapToProviderSummary)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public ProviderDTO.ProviderResponse updateProvider(Long userId, ProviderDTO.UpdateProviderRequest request) {
         ServiceProvider provider = providerRepository.findByUserUserId(userId)
@@ -177,6 +185,15 @@ public class ProviderService {
         }
         if (request.getBasePincode() != null) {
             provider.setBasePincode(request.getBasePincode());
+        }
+        if (request.getCity() != null) {
+            provider.setCity(request.getCity());
+        }
+        if (request.getDistrict() != null) {
+            provider.setDistrict(request.getDistrict());
+        }
+        if (request.getState() != null) {
+            provider.setState(request.getState());
         }
         if (request.getServiceRadiusKm() != null) {
             provider.setServiceRadiusKm(request.getServiceRadiusKm());
@@ -278,6 +295,9 @@ public class ProviderService {
                 .profileImageUrl(profileImageUrl)
                 .experienceYears(provider.getExperienceYears())
                 .basePincode(provider.getBasePincode())
+                .city(provider.getCity())
+                .district(provider.getDistrict())
+                .state(provider.getState())
                 .baseLatitude(provider.getBaseLatitude())
                 .baseLongitude(provider.getBaseLongitude())
                 .serviceRadiusKm(provider.getServiceRadiusKm())
@@ -371,6 +391,9 @@ public class ProviderService {
                 .specializations(specializations)
                 .certifications(certifications)
                 .basePincode(provider.getBasePincode())
+                .city(provider.getCity())
+                .district(provider.getDistrict())
+                .state(provider.getState())
                 .baseAddress(provider.getBaseAddress())
                 .baseLatitude(provider.getBaseLatitude())
                 .baseLongitude(provider.getBaseLongitude())
