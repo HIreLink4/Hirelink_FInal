@@ -319,6 +319,7 @@ public class ProviderService {
 
         return ProviderDTO.ProviderSummary.builder()
                 .providerId(provider.getProviderId())
+                .userId(provider.getUser() != null ? provider.getUser().getUserId() : null)
                 .businessName(provider.getBusinessName())
                 .providerName(providerName)
                 .profileImageUrl(profileImageUrl)

@@ -228,6 +228,7 @@ public class ServiceService {
             }
             providerSummary = ServiceDTO.ProviderSummary.builder()
                     .providerId(provider.getProviderId())
+                    .userId(provider.getUser() != null ? provider.getUser().getUserId() : null)
                     .businessName(provider.getBusinessName())
                     .providerName(providerName)
                     .profileImageUrl(profileImageUrl)

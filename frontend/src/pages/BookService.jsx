@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from 'react-query'
 import { useForm } from 'react-hook-form'
 import { servicesAPI, bookingsAPI, userAPI } from '../services/api'
+import { useAuthStore } from '../context/authStore'
 import { format, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 import { 
@@ -55,8 +56,17 @@ export default function BookService() {
     }
   )
 
+  const { isAuthenticated, user } = useAuthStore()
   const service = serviceData?.data?.data
   const addresses = addressData?.data?.data || []
+
+  // Prevent booking own service
+  useEffect(() => {
+    if (service && user && service.provider?.userId === user.userId) {
+      toast.error('You cannot book your own service')
+      navigate(`/services/${serviceId}`)
+    }
+  }, [service, user, serviceId, navigate])
 
   // Handle location selection from LocationPicker
   const handleLocationSelect = (location) => {
@@ -362,7 +372,7 @@ export default function BookService() {
                   <p className="text-sm font-medium">{service.provider?.businessName || service.provider?.providerName}</p>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <StarIconSolid className="h-3 w-3 text-amber-400" />
-                    <span>{service.provider?.averageRating?.toFixed(1) || '5.0'}</span>
+                    <span>{service.provider?.averageRating?.toFixed?.(1) || '5.0'}</span>
                   </div>
                 </div>
               </div>

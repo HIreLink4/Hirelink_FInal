@@ -25,20 +25,30 @@ export default function NearbyProvidersPanel() {
   const [manualResults, setManualResults] = useState([])
   const [isManualLoading, setIsManualLoading] = useState(false)
   const [detectedPlaceName, setDetectedPlaceName] = useState('')
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   const reverseGeocode = async (lat, lng) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+        {
+          headers: {
+            'Accept-Language': 'en',
+            'User-Agent': 'HireLink-App'
+          }
+        }
+      )
       const data = await response.json()
       if (data && data.address) {
-        const city = data.address.city || data.address.town || data.address.village || data.address.county || ''
-        const state = data.address.state || ''
+        const addr = data.address
+        const city = addr.city || addr.town || addr.village || addr.suburb || addr.district || addr.county || ''
+        const state = addr.state || ''
         const displayName = city ? `${city}${state ? ', ' + state : ''}` : state
-        setDetectedPlaceName(displayName)
+        setDetectedPlaceName(displayName || 'Detected Location')
       }
     } catch (error) {
       console.error('Reverse geocoding error:', error)
+      setDetectedPlaceName('Location Detected')
     }
   }
 
@@ -89,9 +99,11 @@ export default function NearbyProvidersPanel() {
     }
   }
 
-  const nearbyProviders = activeTab === 'nearby' 
+  const allNearbyProviders = activeTab === 'nearby' 
     ? (nearbyData?.data?.data || [])
     : manualResults
+  
+  const nearbyProviders = allNearbyProviders.filter(p => p && p.userId !== user?.userId)
 
   const currentLoading = activeTab === 'nearby' ? isLoading : isManualLoading
 
@@ -281,7 +293,7 @@ export default function NearbyProvidersPanel() {
                       <div className="flex items-center gap-2 text-sm">
                         <div className="flex items-center gap-1">
                           <StarIconSolid className="h-4 w-4 text-amber-400" />
-                          <span className="font-medium">{provider.averageRating?.toFixed(1) || '5.0'}</span>
+                          <span className="font-medium">{provider?.averageRating?.toFixed?.(1) || '5.0'}</span>
                         </div>
                         <span className="text-gray-400">•</span>
                         <span className="text-gray-500">{provider.completedBookings || 0} jobs</span>

@@ -17,7 +17,8 @@ import {
   ChevronRightIcon,
   CalendarDaysIcon,
   UserIcon,
-  MapPinIcon
+  MapPinIcon,
+  Squares2X2Icon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -428,4 +429,3 @@ export default function Home() {
   )
 }
 
-import { Squares2X2Icon } from '@heroicons/react/24/outline'

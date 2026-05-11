@@ -44,6 +44,7 @@ public class ServiceDTO {
     @AllArgsConstructor
     public static class ProviderSummary {
         private Long providerId;
+        private Long userId;
         private String businessName;
         private String providerName;
         private String profileImageUrl;

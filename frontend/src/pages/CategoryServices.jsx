@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { categoriesAPI, servicesAPI } from '../services/api'
+import { useAuthStore } from '../context/authStore'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { ClockIcon, CurrencyRupeeIcon, ChevronRightIcon, MapPinIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
@@ -21,12 +22,61 @@ export default function CategoryServices() {
   )
 
   const category = categoryData?.data?.data
-  const services = servicesData?.data?.data?.services || []
+  const { user } = useAuthStore()
+  const allServices = servicesData?.data?.data?.services || []
+  const services = allServices.filter(s => s && s.provider?.userId !== user?.userId)
   const isLoading = categoryLoading || servicesLoading
 
   const handleLocationSearch = (e) => {
     e.preventDefault()
     setActiveLocation(locationQuery)
+  }
+
+  const [isDetecting, setIsDetecting] = useState(false)
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser')
+      return
+    }
+
+    setIsDetecting(true)
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { 
+              headers: { 
+                'Accept-Language': 'en', 
+                'User-Agent': 'HireLink-App' 
+              } 
+            }
+          )
+          const data = await response.json()
+          const addr = data.address || {}
+          const locName = addr.city || addr.town || addr.village || addr.district || addr.state || ''
+          if (locName) {
+            setLocationQuery(locName)
+            setActiveLocation(locName)
+          }
+        } catch (err) {
+          console.error('Error detecting location:', err)
+        } finally {
+          setIsDetecting(false)
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error)
+        setIsDetecting(false)
+        if (error.code === 1) {
+          alert('Location access denied. Please enable it in your browser settings.')
+        } else {
+          alert('Failed to detect location. Please try again.')
+        }
+      },
+      { timeout: 10000 }
+    )
   }
 
   if (categoryLoading) {
@@ -65,15 +115,23 @@ export default function CategoryServices() {
             {/* Location Search Bar */}
             <div className="w-full md:w-96">
               <form onSubmit={handleLocationSearch} className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <MapPinIcon className="h-5 w-5 text-primary-300 group-focus-within:text-white transition-colors" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center z-10">
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={isDetecting}
+                    className="p-1 text-primary-300 hover:text-white transition-colors disabled:opacity-50"
+                    title="Detect my location"
+                  >
+                    <MapPinIcon className={`h-5 w-5 ${isDetecting ? 'animate-bounce' : ''}`} />
+                  </button>
                 </div>
                 <input
                   type="text"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
                   placeholder="Enter City, Pincode or State..."
-                  className="w-full bg-white/10 border border-white/20 text-white placeholder-primary-200 rounded-xl py-3.5 pl-11 pr-24 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all text-sm"
+                  className="w-full bg-white/10 border border-white/20 text-white placeholder-primary-200 rounded-xl py-3.5 pl-12 pr-24 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all text-sm"
                 />
                 <button 
                   type="submit"

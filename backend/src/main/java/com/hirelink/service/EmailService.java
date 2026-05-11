@@ -302,6 +302,70 @@ public class EmailService {
             );
     }
 
+    public void sendRescheduleConfirmationToUser(
+            String toEmail,
+            String customerName,
+            String providerName,
+            String bookingNumber,
+            String newDate,
+            String newTime,
+            boolean accepted) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Reschedule " + (accepted ? "Accepted" : "Rejected") + " - " + bookingNumber);
+            message.setText(buildRescheduleConfirmationEmailBody(customerName, providerName, bookingNumber, newDate, newTime, accepted));
+
+            mailSender.send(message);
+            log.info("Reschedule confirmation email sent to user: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send reschedule confirmation email to user {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildRescheduleConfirmationEmailBody(
+            String customerName,
+            String providerName,
+            String bookingNumber,
+            String newDate,
+            String newTime,
+            boolean accepted) {
+        if (accepted) {
+            return """
+                Hello %s,
+
+                Your reschedule request for booking #%s has been accepted by the provider.
+
+                Updated Schedule:
+                - Date: %s
+                - Time: %s
+                - Provider: %s
+
+                You can view your updated booking details in your dashboard.
+
+                Dashboard: %s/bookings
+
+                Best regards,
+                HireLink Team
+                """.formatted(customerName, bookingNumber, newDate, newTime, providerName, frontendUrl);
+        } else {
+            return """
+                Hello %s,
+
+                Your reschedule request for booking #%s has been declined by the provider.
+
+                The original appointment schedule remains unchanged.
+
+                Dashboard: %s/bookings
+
+                Best regards,
+                HireLink Team
+                """.formatted(customerName, bookingNumber, frontendUrl);
+        }
+    }
+
     private void logPasswordResetFallback(String email, String tokenOrOtp) {
         log.warn("");
         log.warn("==============================================================");

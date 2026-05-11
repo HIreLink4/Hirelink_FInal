@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { servicesAPI, providersAPI } from '../services/api'
+import { useAuthStore } from '../context/authStore'
 import SearchBar from '../components/SearchBar'
 import { 
   MagnifyingGlassIcon,
@@ -43,8 +44,12 @@ export default function SearchResults() {
     { enabled: !!query }
   )
   
-  const services = servicesData?.data?.data?.services || []
-  const providers = providersData?.data?.data?.providers || []
+  const { user } = useAuthStore()
+  const allServices = servicesData?.data?.data?.services || []
+  const allProviders = providersData?.data?.data?.providers || []
+  
+  const services = allServices.filter(s => s && s.provider?.userId !== user?.userId)
+  const providers = allProviders.filter(p => p && p.userId !== user?.userId)
 
   const handleSearch = (newQuery) => {
     setSearchParams({ q: newQuery, loc: locationQuery })
@@ -65,33 +70,50 @@ export default function SearchResults() {
     setSearchParams({ q: searchQuery, loc: '' })
   }
 
+  const [isDetecting, setIsDetecting] = useState(false)
   const detectLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser')
       return
     }
 
+    setIsDetecting(true)
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': 'en', 'User-Agent': 'HireLink-App' } }
+            { 
+              headers: { 
+                'Accept-Language': 'en', 
+                'User-Agent': 'HireLink-App' 
+              } 
+            }
           )
           const data = await response.json()
-          const locName = data.address?.city || data.address?.town || data.address?.village || data.address?.state || ''
+          const addr = data.address || {}
+          const locName = addr.city || addr.town || addr.village || addr.district || addr.state || ''
           if (locName) {
             setLocationQuery(locName)
             setSearchParams({ q: searchQuery, loc: locName })
           }
         } catch (err) {
           console.error('Error detecting location:', err)
+        } finally {
+          setIsDetecting(false)
         }
       },
       (error) => {
         console.error('Geolocation error:', error)
-      }
+        setIsDetecting(false)
+        if (error.code === 1) {
+          alert('Location access denied. Please enable it in your browser settings.')
+        } else {
+          alert('Failed to detect location. Please try again.')
+        }
+      },
+      { timeout: 10000 }
     )
   }
 
@@ -144,10 +166,11 @@ export default function SearchResults() {
                   <button 
                     type="button"
                     onClick={detectLocation}
-                    className="p-1 text-primary-200 hover:text-white transition-colors"
+                    disabled={isDetecting}
+                    className="p-1 text-primary-200 hover:text-white transition-colors disabled:opacity-50"
                     title="Detect my location"
                   >
-                    <MapPinIcon className="h-4 w-4" />
+                    <MapPinIcon className={`h-4 w-4 ${isDetecting ? 'animate-bounce' : ''}`} />
                   </button>
                 </div>
                 <button 
@@ -269,8 +292,8 @@ export default function SearchResults() {
                             <p className="text-gray-600 text-sm mt-2 line-clamp-2">{service.shortDescription}</p>
                           )}
                           <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                            {service.providerName && (
-                              <span>by {service.providerName}</span>
+                            {(service.provider?.businessName || service.provider?.providerName) && (
+                              <span>by {service.provider?.businessName || service.provider?.providerName}</span>
                             )}
                             {service.estimatedDuration && (
                               <div className="flex items-center gap-1">

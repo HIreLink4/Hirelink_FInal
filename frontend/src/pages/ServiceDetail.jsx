@@ -23,9 +23,10 @@ export default function ServiceDetail() {
   )
 
   const service = data?.data?.data
+  const isOwnService = isAuthenticated && user?.userId === service?.provider?.userId
 
-  // Only customers can book services
-  const canBook = !isAuthenticated || user?.roles?.includes('CUSTOMER') || user?.userType === 'CUSTOMER'
+  // Only customers can book services, and they can't book their own
+  const canBook = isAuthenticated && (user?.roles?.includes('CUSTOMER') || user?.userType === 'CUSTOMER') && !isOwnService
 
   const handleBookNow = () => {
     if (!isAuthenticated) {
@@ -167,7 +168,7 @@ export default function ServiceDetail() {
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <StarIconSolid className="h-4 w-4 text-amber-400" />
-                      <span>{provider?.averageRating?.toFixed(1) || '5.0'}</span>
+                      <span>{provider?.averageRating?.toFixed?.(1) || '5.0'}</span>
                     </div>
                     <span>•</span>
                     <span>{provider?.completedBookings || 0} jobs completed</span>
@@ -240,7 +241,11 @@ export default function ServiceDetail() {
               ) : (
                 <div className="text-center p-4 bg-gray-50 rounded-xl">
                   <p className="text-gray-600 text-sm">
-                    {!user?.roles?.includes('CUSTOMER') ? 'Only customers can book services' : 'You need to log in to book services'}
+                    {isOwnService 
+                      ? "You cannot book your own service" 
+                      : !isAuthenticated 
+                        ? 'You need to log in to book services' 
+                        : 'Only customers can book services'}
                   </p>
                 </div>
               )}

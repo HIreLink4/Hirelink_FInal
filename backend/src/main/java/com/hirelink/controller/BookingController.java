@@ -26,6 +26,9 @@ public class BookingController {
     private final BookingService bookingService;
 
     private boolean hasRole(CustomUserDetails userDetails, String role) {
+        if (userDetails == null || userDetails.getAuthorities() == null) {
+            return false;
+        }
         return userDetails.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }
@@ -174,6 +177,9 @@ public class BookingController {
      * Defaults to CUSTOMER if the requested role isn't in their authorities.
      */
     private User.UserType resolveViewRole(CustomUserDetails userDetails, String role) {
+        if (userDetails == null) {
+            return User.UserType.CUSTOMER;
+        }
         if ("PROVIDER".equalsIgnoreCase(role) && hasRole(userDetails, "PROVIDER")) {
             return User.UserType.PROVIDER;
         }

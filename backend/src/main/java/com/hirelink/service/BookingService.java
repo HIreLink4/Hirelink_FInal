@@ -51,6 +51,11 @@ public class BookingService {
             throw new BadRequestException("This provider does not offer this service");
         }
 
+        // Prevent provider from booking their own service
+        if (provider.getUser().getUserId().equals(userId)) {
+            throw new BadRequestException("You cannot book your own service");
+        }
+
         // Check for duplicate pending bookings
         List<BookingStatus> activeStatuses = Arrays.asList(
                 BookingStatus.PENDING, BookingStatus.ACCEPTED, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS
@@ -248,6 +253,10 @@ public class BookingService {
                 return Collections.emptyList();
         }
         
+        if (bookings == null) {
+            return Collections.emptyList();
+        }
+
         return bookings.stream()
                 .map(this::mapToBookingResponse)
                 .collect(Collectors.toList());
@@ -566,6 +575,26 @@ public class BookingService {
         booking.setRescheduleReason(null);
 
         booking = bookingRepository.save(booking);
+        
+        // Send notification to user
+        try {
+            User customer = booking.getUser();
+            if (customer != null && customer.getEmail() != null) {
+                ServiceProvider provider = booking.getProvider();
+                emailService.sendRescheduleConfirmationToUser(
+                    customer.getEmail(),
+                    customer.getName(),
+                    provider.getBusinessName() != null ? provider.getBusinessName() : provider.getUser().getName(),
+                    booking.getBookingNumber(),
+                    booking.getScheduledDate().toString(),
+                    booking.getScheduledTime().toString(),
+                    accept
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send reschedule confirmation email: " + e.getMessage());
+        }
+
         return mapToBookingResponse(booking);
     }
 

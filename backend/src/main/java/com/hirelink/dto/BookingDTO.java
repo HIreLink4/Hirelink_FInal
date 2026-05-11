@@ -26,7 +26,7 @@ public class BookingDTO {
         private Long providerId;
 
         @NotNull(message = "Scheduled date is required")
-        @Future(message = "Scheduled date must be in the future")
+        @FutureOrPresent(message = "Scheduled date must be today or in the future")
         private LocalDate scheduledDate;
 
         @NotNull(message = "Scheduled time is required")
@@ -189,7 +189,7 @@ public class BookingDTO {
     @AllArgsConstructor
     public static class RescheduleRequest {
         @NotNull(message = "New date is required")
-        @Future(message = "New date must be in the future")
+        @FutureOrPresent(message = "New date must be today or in the future")
         private LocalDate requestedDate;
 
         @NotNull(message = "New time is required")

@@ -696,7 +696,7 @@ public class AuthService {
                 .build();
         userRoleRepository.save(customerRole);
 
-        user.setRoles(List.of(customerRole));
+        user.setRoles(new ArrayList<>(List.of(customerRole)));
 
         log.info("New CUSTOMER user created via OTP: {}", phone != null ? phone : email);
         return user;
@@ -779,7 +779,7 @@ public class AuthService {
                 .build();
         userRoleRepository.save(customerRole);
 
-        newUser.setRoles(List.of(customerRole));
+        newUser.setRoles(new ArrayList<>(List.of(customerRole)));
 
         log.info("New CUSTOMER user registered via Google: {}", request.getEmail());
         return generateAuthResponse(newUser);
@@ -937,7 +937,7 @@ public class AuthService {
     }
 
     private AuthDTO.UserDTO mapToUserDTO(User user) {
-        List<String> roleNames = List.of("CUSTOMER");
+        List<String> roleNames = new ArrayList<>(List.of("CUSTOMER"));
         if (user.getRoles() != null && !user.getRoles().isEmpty()) {
             roleNames = user.getRoles().stream()
                     .map(UserRole::getRole)
